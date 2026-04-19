@@ -1,0 +1,16 @@
+# Target directory
+build/
+/target
+
+# environtment files
+.env
+*.local
+docker-compose.yml
+
+# IDE files
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+

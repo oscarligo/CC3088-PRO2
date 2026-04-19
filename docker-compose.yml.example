@@ -1,0 +1,22 @@
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.rust
+    env_file:
+      - .env
+    container_name: rust-api
+    ports:
+      - "4445:80"
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgresql
+    env_file:
+      - .env
+    container_name: postgres-db
+    ports:
+    - "4444:5432"
+
+
