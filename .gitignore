@@ -1,8 +1,8 @@
 # Project-specific ignores
 build/
-./target
-./backend/target
-./frontend/node_modules
+/target
+/backend/target/
+/frontend/node_modules/
 
 # environtment files
 .env
