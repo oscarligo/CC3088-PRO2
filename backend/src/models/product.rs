@@ -6,11 +6,11 @@ corresponding to the columns in the "product" table of the database.
 */
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct Product {
+pub struct InventoryProduct {
     pub id_product: i32,
-    pub name: String,
+    pub product_name: String,
     pub unit_price: f64,
     pub stock: i32,
-    pub id_category: String,
-    pub id_supplier: String,
+    pub category_name: String,
+    pub supplier_name: String,
 }

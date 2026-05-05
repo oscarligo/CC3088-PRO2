@@ -1,4 +1,5 @@
-use actix_web::{web, App, HttpServer};
+use actix_cors::Cors;
+use actix_web::{http::header, web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use std::env;
@@ -25,7 +26,15 @@ async fn main() -> std::io::Result<()> {
 
     // Actix-web server
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:5173")
+            .allowed_origin("http://127.0.0.1:5173")
+            .allowed_methods(vec!["GET", "OPTIONS"])
+            .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .service(
                 web::scope("/api/products")
