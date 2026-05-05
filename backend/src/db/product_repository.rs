@@ -1,8 +1,11 @@
 use sqlx::PgPool;
 use crate::models::product::InventoryProduct;
 
+/*
+Retrieves a list of all products in the inventory with their associated category and supplier information.
+ */
+
 pub async fn get_inventory(pool: &PgPool) -> Result<Vec<InventoryProduct>, sqlx::Error> {
-    // Consulta con JOIN entre múltiples tablas, visible en la UI (10 puntos de rúbrica)
     let products = sqlx::query_as::<_, InventoryProduct>(
         r#"
         SELECT 

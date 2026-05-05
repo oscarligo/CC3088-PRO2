@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
             .allowed_methods(vec!["GET", "OPTIONS"])
             .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
             .max_age(3600);
-
+    // App instance with CORS middleware and route configuration
         App::new()
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
