@@ -7,3 +7,39 @@ El proyecto consiste en diseñar y desarrollar una aplicación web para gestiona
 La tienda maneja productos agrupados en categorías, comprados a proveedores. Los clientes
 realizan compras atendidas por empleados. Cada compra puede incluir varios productos y debe
 quedar registrada junto con el detalle de lo vendido. La tienda necesita controlar el stock disponible
+
+## Cómo correr (Docker)
+
+### En la raiz del proyecto: 
+
+1) Crear archivo de variables de entorno:
+
+- Copiar `.env.example` a `.env` (se pueden dejar los valores por defecto).
+
+2) Levantar tanto el backend como el frontend:
+
+```bash
+docker compose up --build
+```
+
+3) Abrir en el navegador:
+
+- Frontend: http://localhost:5173 (por defecto)
+- Backend API: http://localhost:8080 (por defecto)
+
+
+## Requisitos del proyecto (dónde se ve en la UI)
+
+- CRUD de 2 entidades:
+	- Productos: pestaña **Productos (CRUD)** (tabla `product`).
+	- Proveedores: pestaña **Proveedores (CRUD)** (tabla `supplier`).
+
+- VIEW usado por el backend:
+	- El inventario usa el VIEW `vw_inventory` y se muestra en **Inventario (VIEW)**.
+
+- Consultas visibles en la UI (ejecutadas desde la app web):
+	- JOIN multi-tabla: **Detalle de ventas**, **Productos por proveedor**, **Ventas por categoría** (pestaña **Reportes SQL**).
+	- SUBQUERY: **Productos sin ventas (NOT EXISTS)** y **Clientes con al menos 2 ventas (IN)** (pestaña **Reportes SQL**).
+	- GROUP BY + HAVING + agregación: **Productos por proveedor** y **Ventas por categoría** (pestaña **Reportes SQL**).
+	- CTE (WITH): **Top clientes por gasto** (pestaña **Reportes SQL**).
+	- Transacción explícita con ROLLBACK: **Registrar venta** (pestaña **Reportes SQL**). Si ingresas una cantidad mayor al stock, el backend responde error y hace rollback.
