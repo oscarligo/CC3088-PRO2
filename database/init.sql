@@ -126,15 +126,27 @@ EXECUTE FUNCTION update_stock();
 CREATE OR REPLACE FUNCTION update_sale_total()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE sale
-    SET total = (
-        SELECT SUM(amount * sale_price)
-        FROM sale_details
-        WHERE id_sale = NEW.id_sale
-    )
-    WHERE id_sale = NEW.id_sale;
+    IF TG_OP = 'DELETE' THEN
+        UPDATE sale
+        SET total = (
+            SELECT COALESCE(SUM(amount * sale_price), 0)
+            FROM sale_details
+            WHERE id_sale = OLD.id_sale
+        )
+        WHERE id_sale = OLD.id_sale;
 
-    RETURN NEW;
+        RETURN OLD;
+    ELSE
+        UPDATE sale
+        SET total = (
+            SELECT COALESCE(SUM(amount * sale_price), 0)
+            FROM sale_details
+            WHERE id_sale = NEW.id_sale
+        )
+        WHERE id_sale = NEW.id_sale;
+
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -142,3 +154,21 @@ CREATE TRIGGER trg_update_sale_total
 AFTER INSERT OR UPDATE OR DELETE ON sale_details
 FOR EACH ROW
 EXECUTE FUNCTION update_sale_total();
+
+-- ==========================================
+-- VIEW: Inventory with Category and Supplier
+-- Used by backend to feed the UI.
+-- ==========================================
+CREATE OR REPLACE VIEW vw_inventory AS
+SELECT
+    p.id_product,
+    p.name AS product_name,
+    p.unit_price,
+    p.stock,
+    p.id_category,
+    c.name AS category_name,
+    p.id_supplier,
+    s.name AS supplier_name
+FROM product p
+INNER JOIN product_category c ON p.id_category = c.id_category
+INNER JOIN supplier s ON p.id_supplier = s.id_supplier;

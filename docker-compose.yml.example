@@ -13,11 +13,6 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   backend:
     build:
@@ -41,7 +36,7 @@ services:
     container_name: frontend_react
     restart: always
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     environment:
       - VITE_API_URL=${VITE_API_URL}
     volumes:
