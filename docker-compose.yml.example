@@ -13,6 +13,9 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 5s
 
   backend:
     build:

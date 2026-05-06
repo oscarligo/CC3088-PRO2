@@ -42,4 +42,4 @@ docker compose up --build
 	- SUBQUERY: **Productos sin ventas (NOT EXISTS)** y **Clientes con al menos 2 ventas (IN)** (pestaña **Reportes SQL**).
 	- GROUP BY + HAVING + agregación: **Productos por proveedor** y **Ventas por categoría** (pestaña **Reportes SQL**).
 	- CTE (WITH): **Top clientes por gasto** (pestaña **Reportes SQL**).
-	- Transacción explícita con ROLLBACK: **Registrar venta** (pestaña **Reportes SQL**). Si ingresas una cantidad mayor al stock, el backend responde error y hace rollback.
+	- Transacción explícita con ROLLBACK: **Registrar venta** (pestaña **Reportes SQL**). Si se ingresa una cantidad mayor al stock, el backend responde error y hace rollback.
