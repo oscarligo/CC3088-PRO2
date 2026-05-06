@@ -14,3 +14,31 @@ pub struct InventoryProduct {
     pub category_name: String,
     pub supplier_name: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Product {
+    pub id_product: i32,
+    pub name: String,
+    pub unit_price: f64,
+    pub stock: i32,
+    pub id_category: i32,
+    pub id_supplier: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateProductRequest {
+    pub name: String,
+    pub unit_price: f64,
+    pub stock: i32,
+    pub id_category: i32,
+    pub id_supplier: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateProductRequest {
+    pub name: String,
+    pub unit_price: f64,
+    pub stock: i32,
+    pub id_category: i32,
+    pub id_supplier: i32,
+}
