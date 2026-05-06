@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import './App.css'
+import { InventoryScreen } from './screens/InventoryScreen'
+import { ProductsScreen } from './screens/ProductsScreen'
+import { SuppliersScreen } from './screens/SuppliersScreen'
+import { ReportsScreen } from './screens/ReportsScreen'
 
-type InventoryProduct = {
-  id_product: number
-  product_name: string
-  unit_price: number
-  stock: number
-  category_name: string
-  supplier_name: string
-}
+type TabKey = 'inventario' | 'productos' | 'proveedores' | 'reportes'
 
 function App() {
   const apiBaseUrl = useMemo(() => {
@@ -16,94 +13,40 @@ function App() {
     return base.replace(/\/$/, '')
   }, [])
 
-  const inventoryUrl = useMemo(
-    () => `${apiBaseUrl}/api/products/inventory`,
-    [apiBaseUrl],
-  )
+  const [tab, setTab] = useState<TabKey>('inventario')
 
-  const [products, setProducts] = useState<InventoryProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const res = await fetch(inventoryUrl, {
-          signal: controller.signal,
-          headers: { Accept: 'application/json' },
-        })
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
-        }
-
-        const data = (await res.json()) as InventoryProduct[]
-        setProducts(data)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-        const message = e instanceof Error ? e.message : 'Error desconocido'
-        setError(message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => controller.abort()
-  }, [inventoryUrl])
+  const navItems: Array<{ key: TabKey; label: string }> = [
+    { key: 'inventario', label: 'Inventario' },
+    { key: 'productos', label: 'Productos (CRUD completo)' },
+    { key: 'proveedores', label: 'Proveedores (CRUD completo)' },
+    { key: 'reportes', label: 'Reportes SQL' },
+  ]
 
   return (
     <main className="page">
       <header className="pageHeader">
-        <h1>Inventario</h1>
-        <p className="muted">Mostrando productos desde el backend.</p>
-        <p className="muted">
-          API: <code>{inventoryUrl}</code>
-        </p>
+        <h1>Tienda — Inventario y Ventas</h1>
+        <p className="muted">API base: <code>{apiBaseUrl}</code></p>
+
+        <nav className="tabs" aria-label="Secciones">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={tab === item.key ? 'tab active' : 'tab'}
+              onClick={() => setTab(item.key)}
+              aria-current={tab === item.key ? 'page' : undefined}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
       </header>
 
-      {loading ? (
-        <p className="status">Cargando productos...</p>
-      ) : error ? (
-        <p className="status error" role="alert">
-          Error: {error}
-        </p>
-      ) : products.length === 0 ? (
-        <p className="status">No hay productos.</p>
-      ) : (
-        <div className="tableWrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Producto</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Categoría</th>
-                <th>Proveedor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => (
-                <tr key={p.id_product}>
-                  <td className="mono">{p.id_product}</td>
-                  <td>{p.product_name}</td>
-                  <td className="mono">{p.unit_price.toFixed(2)}</td>
-                  <td className="mono">{p.stock}</td>
-                  <td>{p.category_name}</td>
-                  <td>{p.supplier_name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === 'inventario' ? <InventoryScreen apiBaseUrl={apiBaseUrl} /> : null}
+      {tab === 'productos' ? <ProductsScreen apiBaseUrl={apiBaseUrl} /> : null}
+      {tab === 'proveedores' ? <SuppliersScreen apiBaseUrl={apiBaseUrl} /> : null}
+      {tab === 'reportes' ? <ReportsScreen apiBaseUrl={apiBaseUrl} /> : null}
     </main>
   )
 }

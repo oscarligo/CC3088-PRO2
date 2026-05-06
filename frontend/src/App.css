@@ -13,6 +13,9 @@
 .pageHeader {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .muted {
@@ -64,4 +67,155 @@
 
 .mono {
   font-family: var(--mono);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--social-bg);
+  color: var(--text-h);
+  border-radius: 999px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tab.active {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--social-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field.actions {
+  justify-content: flex-end;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.input,
+.select {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buttonRow.compact {
+  justify-content: flex-end;
+}
+
+.button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.button.primary {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.button.danger {
+  border-color: var(--accent-border);
+}
+
+.button:disabled,
+.tab:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.right {
+  text-align: right;
+}
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reportCard {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+}
+
+.reportCard.full {
+  grid-column: 1 / -1;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 18px;
 }
