@@ -6,9 +6,6 @@ edition = "2024"
 [dependencies]
 actix-cors = "0.7.1"
 actix-web = "4.5.1"
-async-trait = "0.1"
 dotenv = "0.15.0"
-sea-orm = { version = "1.1.20", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
 serde = { version = "1.0.228", features = ["derive"] }
-utoipa = { version = "5", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
+sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio-rustls", "macros"] }
