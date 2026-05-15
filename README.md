@@ -3,9 +3,9 @@
 - Master: proyecto 2 de base de datos 1. 
 - proyecto-3: proyecto 3 de base de datos 1. 
 
-# CC3088 - Proyecto No 2. 
+# CC3088 - Proyecto No 3. 
 
-El proyecto consiste en diseñar y desarrollar una aplicación web para gestionar el inventario y las ventas de una tienda. 
+El proyecto consiste en diseñar y desarrollar una aplicación web para gestionar el inventario y las ventas de una tienda. Trabajando sobre el proyecto número 2.  
 
 ## Contexto del negocio:
 
