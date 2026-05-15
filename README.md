@@ -1,3 +1,10 @@
+### Ramas del Repositorio:
+
+- Main: proyecto 2 de base de datos 1. 
+- integración-web-bd1: proyecto 3 de base de datos 1 y proyecto 2 de sistemas y tecnologías web. 
+
+
+
 # CC3088 - Proyecto No 2. 
 
 El proyecto consiste en diseñar y desarrollar una aplicación web para gestionar el inventario y las ventas de una tienda. 
