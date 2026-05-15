@@ -2,8 +2,10 @@
 
 - Master: proyecto 2 de base de datos 1. 
 - proyecto-3: proyecto 3 de base de datos 1. 
+- proyecto-2-web: proyecto 2 de sistemas y tencnologías web
 
-# CC3088 - Proyecto No 2. 
+
+# CC3062 - Proyecto No 2. 
 
 El proyecto consiste en diseñar y desarrollar una aplicación web para gestionar el inventario y las ventas de una tienda. 
 
