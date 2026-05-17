@@ -1,155 +1,43 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { apiJson, apiNoContent } from '../../api'
+import { useSuppliersManager } from '../../hooks/useSuppliersManager'
 
-type Supplier = {
-  id_supplier: number
-  name: string
-  email: string | null
-  phone: string | null
-}
-
-type Props = {
-  apiBaseUrl: string
-}
-
-export default function SuppliersScreen({ apiBaseUrl }: Props) {
-  const suppliersUrl = `${apiBaseUrl}/api/suppliers`
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-
-  const resetForm = () => {
-    setEditingId(null)
-    setName('')
-    setEmail('')
-    setPhone('')
-    setFormError(null)
-  }
-
-  const reload = async (signal?: AbortSignal) => {
-    const data = await apiJson<Supplier[]>(suppliersUrl, { signal })
-    setSuppliers(data)
-  }
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        await reload(controller.signal)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-        setError(e instanceof Error ? e.message : 'Error desconocido')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => controller.abort()
-  }, [suppliersUrl])
-
-  const startEdit = (s: Supplier) => {
-    setEditingId(s.id_supplier)
-    setName(s.name)
-    setEmail(s.email ?? '')
-    setPhone(s.phone ?? '')
-    setFormError(null)
-  }
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
-
-    const trimmedName = name.trim()
-    if (!trimmedName) {
-      setFormError('El nombre es obligatorio')
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    const body = JSON.stringify({
-      name: trimmedName,
-      email: email.trim() ? email.trim() : null,
-      phone: phone.trim() ? phone.trim() : null,
-    })
-
-    try {
-      if (editingId) {
-        await apiJson<Supplier>(`${suppliersUrl}/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        })
-      } else {
-        await apiJson<Supplier>(suppliersUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        })
-      }
-
-      await reload()
-      resetForm()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const remove = async (id: number) => {
-    setSaving(true)
-    setError(null)
-
-    try {
-      await apiNoContent(`${suppliersUrl}/${id}`, { method: 'DELETE' })
-      await reload()
-      if (editingId === id) resetForm()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido')
-    } finally {
-      setSaving(false)
-    }
-  }
+export default function Suppliers() {
+  const { state, setField, startEdit, resetForm, submit, remove } = useSuppliersManager()
 
   return (
-    <section className="section">
-      <header className="sectionHeader">
-        <h2>Proveedores (CRUD)</h2>
-        <p className="muted">CRUD completo sobre la tabla <code>supplier</code>.</p>
+    <section className="page pageFrame section">
+      <header className="pageHeader">
+        <span className="eyebrow">Catálogo</span>
+        <h2>Proveedores</h2>
+        <p className="muted">Formulario controlado con validación cliente y CRUD encapsulado en un hook.</p>
+        <div className="buttonRow">
+          <button className="button primary" type="button" onClick={resetForm} disabled={state.saving}>
+            Nuevo proveedor
+          </button>
+        </div>
       </header>
 
-      {error ? (
+      {state.error ? (
         <p className="status error" role="alert">
-          Error: {error}
+          Error: {state.error}
         </p>
       ) : null}
 
-      <form className="form" onSubmit={submit}>
+      <form
+        className="form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit()
+        }}
+      >
         <div className="formRow">
           <label className="field">
             <span className="label">Nombre</span>
             <input
               className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={state.form.name}
+              onChange={(event) => setField('name', event.target.value)}
               placeholder="Nombre del proveedor"
-              disabled={saving}
+              disabled={state.saving}
               required
             />
           </label>
@@ -158,10 +46,10 @@ export default function SuppliersScreen({ apiBaseUrl }: Props) {
             <span className="label">Email</span>
             <input
               className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={state.form.email}
+              onChange={(event) => setField('email', event.target.value)}
               placeholder="correo@dominio.com"
-              disabled={saving}
+              disabled={state.saving}
             />
           </label>
 
@@ -169,41 +57,38 @@ export default function SuppliersScreen({ apiBaseUrl }: Props) {
             <span className="label">Teléfono</span>
             <input
               className="input"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              value={state.form.phone}
+              onChange={(event) => setField('phone', event.target.value)}
               placeholder="0000-0000"
-              disabled={saving}
+              disabled={state.saving}
             />
           </label>
 
           <div className="field actions">
-            <span className="label">Acciones</span>
-            <div className="buttonRow">
-              <button className="button primary" type="submit" disabled={saving}>
-                {editingId ? 'Guardar' : 'Crear'}
-              </button>
-              <button
-                className="button"
-                type="button"
-                onClick={resetForm}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-            </div>
+            <span className="label">Estado</span>
+            <p className="muted">{state.editingId != null ? `Editando #${state.editingId}` : 'Creando nuevo registro'}</p>
           </div>
         </div>
 
-        {formError ? (
+        <div className="buttonRow">
+          <button className="button primary" type="submit" disabled={state.saving}>
+            {state.editingId != null ? 'Actualizar' : 'Crear'}
+          </button>
+          <button className="button" type="button" onClick={resetForm} disabled={state.saving}>
+            Cancelar
+          </button>
+        </div>
+
+        {state.formError ? (
           <p className="status error" role="alert">
-            {formError}
+            {state.formError}
           </p>
         ) : null}
       </form>
 
-      {loading ? (
-        <p className="status">Cargando...</p>
-      ) : suppliers.length === 0 ? (
+      {state.loading ? (
+        <p className="status">Cargando proveedores...</p>
+      ) : state.suppliers.length === 0 ? (
         <p className="status">No hay proveedores.</p>
       ) : (
         <div className="tableWrap">
@@ -218,28 +103,18 @@ export default function SuppliersScreen({ apiBaseUrl }: Props) {
               </tr>
             </thead>
             <tbody>
-              {suppliers.map((s) => (
-                <tr key={s.id_supplier}>
-                  <td className="mono">{s.id_supplier}</td>
-                  <td>{s.name}</td>
-                  <td className="mono">{s.email ?? '-'}</td>
-                  <td className="mono">{s.phone ?? '-'}</td>
+              {state.suppliers.map((supplier) => (
+                <tr key={supplier.id_supplier}>
+                  <td className="mono">{supplier.id_supplier}</td>
+                  <td>{supplier.name}</td>
+                  <td className="mono">{supplier.email ?? '-'}</td>
+                  <td className="mono">{supplier.phone ?? '-'}</td>
                   <td className="right">
                     <div className="buttonRow compact">
-                      <button
-                        className="button"
-                        type="button"
-                        onClick={() => startEdit(s)}
-                        disabled={saving}
-                      >
+                      <button className="button" type="button" onClick={() => startEdit(supplier)} disabled={state.saving}>
                         Editar
                       </button>
-                      <button
-                        className="button danger"
-                        type="button"
-                        onClick={() => remove(s.id_supplier)}
-                        disabled={saving}
-                      >
+                      <button className="button danger" type="button" onClick={() => void remove(supplier.id_supplier)} disabled={state.saving}>
                         Eliminar
                       </button>
                     </div>

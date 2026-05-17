@@ -1,22 +1,10 @@
 import { useEffect, useState } from 'react'
-import { apiJson } from '../../api'
+import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
+import { getInventory } from '../../services/inventoryService'
+import type { InventoryProduct } from '../../types/domain'
 
-export type InventoryProduct = {
-  id_product: number
-  product_name: string
-  unit_price: number
-  stock: number
-  category_name: string
-  supplier_name: string
-}
-
-type Props = {
-  apiBaseUrl: string
-}
-
-export  default function InventoryScreen({ apiBaseUrl }: Props) {
-  const inventoryUrl = `${apiBaseUrl}/api/products/inventory`
-
+export default function Inventory() {
+  const { apiBaseUrl } = useAppConfig()
   const [products, setProducts] = useState<InventoryProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,14 +17,11 @@ export  default function InventoryScreen({ apiBaseUrl }: Props) {
       setError(null)
 
       try {
-        const data = await apiJson<InventoryProduct[]>(inventoryUrl, {
-          signal: controller.signal,
-        })
+        const data = await getInventory(apiBaseUrl, controller.signal)
         setProducts(data)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-        const message = e instanceof Error ? e.message : 'Error desconocido'
-        setError(message)
+      } catch (exception) {
+        if (exception instanceof DOMException && exception.name === 'AbortError') return
+        setError(exception instanceof Error ? exception.message : 'Error desconocido')
       } finally {
         setLoading(false)
       }
@@ -45,19 +30,14 @@ export  default function InventoryScreen({ apiBaseUrl }: Props) {
     void load()
 
     return () => controller.abort()
-  }, [inventoryUrl])
+  }, [apiBaseUrl])
 
   return (
-    <section className="section">
-      <header className="sectionHeader">
-        <h2>Inventario (VIEW)</h2>
-        <p className="muted">
-          Este listado se alimenta desde el backend usando el VIEW{' '}
-          <code>vw_inventory</code>.
-        </p>
-        <p className="muted">
-          API: <code>{inventoryUrl}</code>
-        </p>
+    <section className="page pageFrame section">
+      <header className="pageHeader">
+        <span className="eyebrow">Vista</span>
+        <h2>Inventario</h2>
+        <p className="muted">Listado basado en el view del backend, obtenido desde un servicio dedicado.</p>
       </header>
 
       {loading ? (
@@ -82,14 +62,14 @@ export  default function InventoryScreen({ apiBaseUrl }: Props) {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.id_product}>
-                  <td className="mono">{p.id_product}</td>
-                  <td>{p.product_name}</td>
-                  <td className="mono">{p.unit_price.toFixed(2)}</td>
-                  <td className="mono">{p.stock}</td>
-                  <td>{p.category_name}</td>
-                  <td>{p.supplier_name}</td>
+              {products.map((product) => (
+                <tr key={product.id_product}>
+                  <td className="mono">{product.id_product}</td>
+                  <td>{product.product_name}</td>
+                  <td className="mono">{product.unit_price.toFixed(2)}</td>
+                  <td className="mono">{product.stock}</td>
+                  <td>{product.category_name}</td>
+                  <td>{product.supplier_name}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,79 +1,21 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { apiJson } from '../../api'
+import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
+import { createSale, getReportData } from '../../services/reportsService'
+import type {
+  CategorySales,
+  Client,
+  CreateSaleResponse,
+  Employee,
+  InventoryProduct,
+  Product,
+  SaleLine,
+  SupplierProductCount,
+  TopClient,
+} from '../../types/domain'
 
-type SaleLine = {
-  id_sale: number
-  sale_date: string
-  client_name: string | null
-  employee_name: string
-  product_name: string
-  amount: number
-  sale_price: number
-  line_total: number
-}
+export default function Reports() {
+  const { apiBaseUrl } = useAppConfig()
 
-type SupplierProductCount = {
-  id_supplier: number
-  supplier_name: string
-  products_count: number
-  avg_unit_price: number | null
-}
-
-type CategorySales = {
-  id_category: number
-  category_name: string
-  items_sold: number
-  sales_count: number
-  total_revenue: number
-}
-
-type InventoryProduct = {
-  id_product: number
-  product_name: string
-  unit_price: number
-  stock: number
-  category_name: string
-  supplier_name: string
-}
-
-type Client = {
-  id_client: number
-  name: string
-  nit: string | null
-  email: string | null
-}
-
-type TopClient = {
-  id_client: number
-  client_name: string
-  total_spent: number
-  sales_count: number
-}
-
-type Employee = {
-  id_employee: number
-  name: string
-  role: string
-}
-
-type Product = {
-  id_product: number
-  name: string
-  unit_price: number
-  stock: number
-  id_category: number
-  id_supplier: number
-}
-
-type CreateSaleResponse = {
-  id_sale: number
-}
-
-type Props = {
-  apiBaseUrl: string
-}
-
-export default function ReportsScreen({ apiBaseUrl }: Props) {
   const urls = useMemo(
     () => ({
       saleLines: `${apiBaseUrl}/api/reports/sale-lines`,
@@ -82,9 +24,6 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
       unsoldProducts: `${apiBaseUrl}/api/reports/unsold-products`,
       clientsMinSales: `${apiBaseUrl}/api/reports/clients-min-sales?min_sales=2`,
       topClients: `${apiBaseUrl}/api/reports/top-clients?limit=10`,
-      clients: `${apiBaseUrl}/api/clients`,
-      employees: `${apiBaseUrl}/api/employees`,
-      products: `${apiBaseUrl}/api/products`,
       sales: `${apiBaseUrl}/api/sales`,
     }),
     [apiBaseUrl],
@@ -92,76 +31,39 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
   const [saleLines, setSaleLines] = useState<SaleLine[]>([])
   const [supplierCounts, setSupplierCounts] = useState<SupplierProductCount[]>([])
   const [categorySales, setCategorySales] = useState<CategorySales[]>([])
   const [unsoldProducts, setUnsoldProducts] = useState<InventoryProduct[]>([])
   const [clientsMinSales, setClientsMinSales] = useState<Client[]>([])
   const [topClients, setTopClients] = useState<TopClient[]>([])
-
   const [clients, setClients] = useState<Client[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [products, setProducts] = useState<Product[]>([])
-
   const [saleSaving, setSaleSaving] = useState(false)
   const [saleError, setSaleError] = useState<string | null>(null)
   const [saleSuccess, setSaleSuccess] = useState<string | null>(null)
-
   const [idClient, setIdClient] = useState<string>('')
   const [idEmployee, setIdEmployee] = useState<string>('')
   const [idProduct, setIdProduct] = useState<string>('')
   const [amount, setAmount] = useState<string>('1')
 
-  const setDefaultsForSaleForm = (opts: {
-    clients: Client[]
-    employees: Employee[]
-    products: Product[]
-  }) => {
-    if (!idClient && opts.clients.length > 0) setIdClient(String(opts.clients[0].id_client))
-    if (!idEmployee && opts.employees.length > 0) setIdEmployee(String(opts.employees[0].id_employee))
-    if (!idProduct && opts.products.length > 0) setIdProduct(String(opts.products[0].id_product))
-  }
-
   const loadAll = async (signal?: AbortSignal) => {
-    const [
-      saleLinesData,
-      supplierCountsData,
-      categorySalesData,
-      unsoldProductsData,
-      clientsMinSalesData,
-      topClientsData,
-      clientsData,
-      employeesData,
-      productsData,
-    ] = await Promise.all([
-      apiJson<SaleLine[]>(urls.saleLines, { signal }),
-      apiJson<SupplierProductCount[]>(urls.supplierProductCount, { signal }),
-      apiJson<CategorySales[]>(urls.categorySales, { signal }),
-      apiJson<InventoryProduct[]>(urls.unsoldProducts, { signal }),
-      apiJson<Client[]>(urls.clientsMinSales, { signal }),
-      apiJson<TopClient[]>(urls.topClients, { signal }),
-      apiJson<Client[]>(urls.clients, { signal }),
-      apiJson<Employee[]>(urls.employees, { signal }),
-      apiJson<Product[]>(urls.products, { signal }),
-    ])
+    const data = await getReportData(apiBaseUrl, signal)
 
-    setSaleLines(saleLinesData)
-    setSupplierCounts(supplierCountsData)
-    setCategorySales(categorySalesData)
-    setUnsoldProducts(unsoldProductsData)
-    setClientsMinSales(clientsMinSalesData)
-    setTopClients(topClientsData)
+    setSaleLines(data.saleLines)
+    setSupplierCounts(data.supplierProductCount)
+    setCategorySales(data.categorySales)
+    setUnsoldProducts(data.unsoldProducts)
+    setClientsMinSales(data.clientsMinSales)
+    setTopClients(data.topClients)
+    setClients(data.clients)
+    setEmployees(data.employees)
+    setProducts(data.products)
 
-    setClients(clientsData)
-    setEmployees(employeesData)
-    setProducts(productsData)
-
-    setDefaultsForSaleForm({
-      clients: clientsData,
-      employees: employeesData,
-      products: productsData,
-    })
+    if (!idClient && data.clients.length > 0) setIdClient(String(data.clients[0].id_client))
+    if (!idEmployee && data.employees.length > 0) setIdEmployee(String(data.employees[0].id_employee))
+    if (!idProduct && data.products.length > 0) setIdProduct(String(data.products[0].id_product))
   }
 
   useEffect(() => {
@@ -173,9 +75,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
       try {
         await loadAll(controller.signal)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-        setError(e instanceof Error ? e.message : 'Error desconocido')
+      } catch (exception) {
+        if (exception instanceof DOMException && exception.name === 'AbortError') return
+        setError(exception instanceof Error ? exception.message : 'Error desconocido')
       } finally {
         setLoading(false)
       }
@@ -185,7 +87,7 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urls])
+  }, [apiBaseUrl])
 
   const reload = async () => {
     setError(null)
@@ -193,15 +95,15 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
     try {
       await loadAll()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido')
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : 'Error desconocido')
     } finally {
       setLoading(false)
     }
   }
 
-  const submitSale = async (e: FormEvent) => {
-    e.preventDefault()
+  const submitSale = async (event: FormEvent) => {
+    event.preventDefault()
     setSaleError(null)
     setSaleSuccess(null)
 
@@ -230,34 +132,29 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
     setSaleSaving(true)
 
     try {
-      const res = await apiJson<CreateSaleResponse>(urls.sales, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_client: idClientPayload,
-          id_employee: idEmployeeNumber,
-          items: [{ id_product: idProductNumber, amount: amountNumber }],
-        }),
+      const response: CreateSaleResponse = await createSale(apiBaseUrl, {
+        id_client: idClientPayload,
+        id_employee: idEmployeeNumber,
+        items: [{ id_product: idProductNumber, amount: amountNumber }],
       })
 
-      setSaleSuccess(`Venta creada con id_sale=${res.id_sale}`)
+      setSaleSuccess(`Venta creada con id_sale=${response.id_sale}`)
       await reload()
-    } catch (e) {
-      setSaleError(e instanceof Error ? e.message : 'Error desconocido')
+    } catch (exception) {
+      setSaleError(exception instanceof Error ? exception.message : 'Error desconocido')
     } finally {
       setSaleSaving(false)
     }
   }
 
   return (
-    <section className="section">
-      <header className="sectionHeader">
-        <h2>Reportes SQL (JOIN / SUBQUERY / GROUP BY / HAVING / CTE)</h2>
-        <p className="muted">
-          Estas consultas se ejecutan desde la aplicación web (backend) y sus resultados se muestran aquí.
-        </p>
+    <section className="page pageFrame section">
+      <header className="pageHeader">
+        <span className="eyebrow">Analítica</span>
+        <h2>Reportes</h2>
+        <p className="muted">Consultas de SQL y registro de ventas coordinados desde servicios reutilizables.</p>
         <div className="buttonRow">
-          <button className="button" type="button" onClick={reload} disabled={loading}>
+          <button className="button" type="button" onClick={() => void reload()} disabled={loading}>
             Recargar
           </button>
         </div>
@@ -270,12 +167,10 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
         </p>
       ) : null}
 
-      <div className="reportGrid">
-        <div className="reportCard">
-          <h3 className="cardTitle">JOIN (multi-tabla): Detalle de ventas</h3>
-          <p className="muted">
-            API: <code>{urls.saleLines}</code>
-          </p>
+      <div className="gridTwo">
+        <div className="panel">
+          <h3>JOIN: Detalle de ventas</h3>
+          <p className="muted">API: <code>{urls.saleLines}</code></p>
           {saleLines.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
@@ -294,16 +189,16 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {saleLines.map((r, idx) => (
-                    <tr key={`${r.id_sale}-${idx}`}>
-                      <td className="mono">{r.id_sale}</td>
-                      <td className="mono">{r.sale_date}</td>
-                      <td>{r.client_name ?? '-'}</td>
-                      <td>{r.employee_name}</td>
-                      <td>{r.product_name}</td>
-                      <td className="mono">{r.amount}</td>
-                      <td className="mono">{r.sale_price.toFixed(2)}</td>
-                      <td className="mono">{r.line_total.toFixed(2)}</td>
+                  {saleLines.map((line, index) => (
+                    <tr key={`${line.id_sale}-${index}`}>
+                      <td className="mono">{line.id_sale}</td>
+                      <td className="mono">{line.sale_date}</td>
+                      <td>{line.client_name ?? '-'}</td>
+                      <td>{line.employee_name}</td>
+                      <td>{line.product_name}</td>
+                      <td className="mono">{line.amount}</td>
+                      <td className="mono">{line.sale_price.toFixed(2)}</td>
+                      <td className="mono">{line.line_total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -312,11 +207,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           )}
         </div>
 
-        <div className="reportCard">
-          <h3 className="cardTitle">JOIN + GROUP BY + HAVING: Productos por proveedor</h3>
-          <p className="muted">
-            API: <code>{urls.supplierProductCount}</code>
-          </p>
+        <div className="panel">
+          <h3>JOIN + GROUP BY: Productos por proveedor</h3>
+          <p className="muted">API: <code>{urls.supplierProductCount}</code></p>
           {supplierCounts.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
@@ -330,13 +223,11 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {supplierCounts.map((r) => (
-                    <tr key={r.id_supplier}>
-                      <td>{r.supplier_name}</td>
-                      <td className="mono">{r.products_count}</td>
-                      <td className="mono">
-                        {r.avg_unit_price == null ? '-' : r.avg_unit_price.toFixed(2)}
-                      </td>
+                  {supplierCounts.map((row) => (
+                    <tr key={row.id_supplier}>
+                      <td>{row.supplier_name}</td>
+                      <td className="mono">{row.products_count}</td>
+                      <td className="mono">{row.avg_unit_price == null ? '-' : row.avg_unit_price.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -345,11 +236,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           )}
         </div>
 
-        <div className="reportCard">
-          <h3 className="cardTitle">JOIN + GROUP BY + HAVING: Ventas por categoría</h3>
-          <p className="muted">
-            API: <code>{urls.categorySales}</code>
-          </p>
+        <div className="panel">
+          <h3>GROUP BY: Ventas por categoría</h3>
+          <p className="muted">API: <code>{urls.categorySales}</code></p>
           {categorySales.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
@@ -364,12 +253,12 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {categorySales.map((r) => (
-                    <tr key={r.id_category}>
-                      <td>{r.category_name}</td>
-                      <td className="mono">{r.items_sold}</td>
-                      <td className="mono">{r.sales_count}</td>
-                      <td className="mono">{r.total_revenue.toFixed(2)}</td>
+                  {categorySales.map((row) => (
+                    <tr key={row.id_category}>
+                      <td>{row.category_name}</td>
+                      <td className="mono">{row.items_sold}</td>
+                      <td className="mono">{row.sales_count}</td>
+                      <td className="mono">{row.total_revenue.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -378,11 +267,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           )}
         </div>
 
-        <div className="reportCard">
-          <h3 className="cardTitle">SUBQUERY (NOT EXISTS): Productos sin ventas</h3>
-          <p className="muted">
-            API: <code>{urls.unsoldProducts}</code>
-          </p>
+        <div className="panel">
+          <h3>SUBQUERY: Productos sin ventas</h3>
+          <p className="muted">API: <code>{urls.unsoldProducts}</code></p>
           {unsoldProducts.length === 0 ? (
             <p className="status">Sin datos (todos tienen ventas).</p>
           ) : (
@@ -398,13 +285,13 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {unsoldProducts.map((p) => (
-                    <tr key={p.id_product}>
-                      <td className="mono">{p.id_product}</td>
-                      <td>{p.product_name}</td>
-                      <td className="mono">{p.stock}</td>
-                      <td>{p.category_name}</td>
-                      <td>{p.supplier_name}</td>
+                  {unsoldProducts.map((product) => (
+                    <tr key={product.id_product}>
+                      <td className="mono">{product.id_product}</td>
+                      <td>{product.product_name}</td>
+                      <td className="mono">{product.stock}</td>
+                      <td>{product.category_name}</td>
+                      <td>{product.supplier_name}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -413,11 +300,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           )}
         </div>
 
-        <div className="reportCard">
-          <h3 className="cardTitle">SUBQUERY (IN): Clientes con al menos 2 ventas</h3>
-          <p className="muted">
-            API: <code>{urls.clientsMinSales}</code>
-          </p>
+        <div className="panel">
+          <h3>SUBQUERY: Clientes con al menos 2 ventas</h3>
+          <p className="muted">API: <code>{urls.clientsMinSales}</code></p>
           {clientsMinSales.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
@@ -432,12 +317,12 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {clientsMinSales.map((c) => (
-                    <tr key={c.id_client}>
-                      <td className="mono">{c.id_client}</td>
-                      <td>{c.name}</td>
-                      <td className="mono">{c.nit ?? '-'}</td>
-                      <td className="mono">{c.email ?? '-'}</td>
+                  {clientsMinSales.map((client) => (
+                    <tr key={client.id_client}>
+                      <td className="mono">{client.id_client}</td>
+                      <td>{client.name}</td>
+                      <td className="mono">{client.nit ?? '-'}</td>
+                      <td className="mono">{client.email ?? '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -446,11 +331,9 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           )}
         </div>
 
-        <div className="reportCard">
-          <h3 className="cardTitle">CTE (WITH): Top clientes por gasto</h3>
-          <p className="muted">
-            API: <code>{urls.topClients}</code>
-          </p>
+        <div className="panel">
+          <h3>CTE: Top clientes por gasto</h3>
+          <p className="muted">API: <code>{urls.topClients}</code></p>
           {topClients.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
@@ -465,12 +348,12 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {topClients.map((c) => (
-                    <tr key={c.id_client}>
-                      <td className="mono">{c.id_client}</td>
-                      <td>{c.client_name}</td>
-                      <td className="mono">{c.sales_count}</td>
-                      <td className="mono">{c.total_spent.toFixed(2)}</td>
+                  {topClients.map((client) => (
+                    <tr key={client.id_client}>
+                      <td className="mono">{client.id_client}</td>
+                      <td>{client.client_name}</td>
+                      <td className="mono">{client.sales_count}</td>
+                      <td className="mono">{client.total_spent.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -480,14 +363,12 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
       </div>
 
-      <div className="reportCard full">
-        <h3 className="cardTitle">Transacción explícita (BEGIN/ROLLBACK): Registrar venta</h3>
+      <div className="panel">
+        <h3>Transacción: Registrar venta</h3>
         <p className="muted">
           Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.
         </p>
-        <p className="muted">
-          API: <code>{urls.sales}</code>
-        </p>
+        <p className="muted">API: <code>{urls.sales}</code></p>
 
         {saleSuccess ? <p className="status">{saleSuccess}</p> : null}
         {saleError ? (
@@ -496,19 +377,20 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
           </p>
         ) : null}
 
-        <form className="form" onSubmit={submitSale}>
+        <form
+          className="form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submitSale(event)
+          }}
+        >
           <div className="formRow">
             <label className="field">
               <span className="label">Cliente</span>
-              <select
-                className="select"
-                value={idClient}
-                onChange={(e) => setIdClient(e.target.value)}
-                disabled={saleSaving || clients.length === 0}
-              >
-                {clients.map((c) => (
-                  <option key={c.id_client} value={c.id_client}>
-                    {c.name}
+              <select className="select" value={idClient} onChange={(event) => setIdClient(event.target.value)} disabled={saleSaving || clients.length === 0}>
+                {clients.map((client) => (
+                  <option key={client.id_client} value={client.id_client}>
+                    {client.name}
                   </option>
                 ))}
               </select>
@@ -516,15 +398,10 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
             <label className="field">
               <span className="label">Empleado</span>
-              <select
-                className="select"
-                value={idEmployee}
-                onChange={(e) => setIdEmployee(e.target.value)}
-                disabled={saleSaving || employees.length === 0}
-              >
-                {employees.map((emp) => (
-                  <option key={emp.id_employee} value={emp.id_employee}>
-                    {emp.name} — {emp.role}
+              <select className="select" value={idEmployee} onChange={(event) => setIdEmployee(event.target.value)} disabled={saleSaving || employees.length === 0}>
+                {employees.map((employee) => (
+                  <option key={employee.id_employee} value={employee.id_employee}>
+                    {employee.name} — {employee.role}
                   </option>
                 ))}
               </select>
@@ -532,15 +409,10 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
             <label className="field">
               <span className="label">Producto</span>
-              <select
-                className="select"
-                value={idProduct}
-                onChange={(e) => setIdProduct(e.target.value)}
-                disabled={saleSaving || products.length === 0}
-              >
-                {products.map((p) => (
-                  <option key={p.id_product} value={p.id_product}>
-                    {p.name} (stock: {p.stock})
+              <select className="select" value={idProduct} onChange={(event) => setIdProduct(event.target.value)} disabled={saleSaving || products.length === 0}>
+                {products.map((product) => (
+                  <option key={product.id_product} value={product.id_product}>
+                    {product.name} (stock: {product.stock})
                   </option>
                 ))}
               </select>
@@ -548,23 +420,14 @@ export default function ReportsScreen({ apiBaseUrl }: Props) {
 
             <label className="field">
               <span className="label">Cantidad</span>
-              <input
-                className="input"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                inputMode="numeric"
-                disabled={saleSaving}
-              />
+              <input className="input" value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" disabled={saleSaving} />
             </label>
+          </div>
 
-            <div className="field actions">
-              <span className="label">Acción</span>
-              <div className="buttonRow">
-                <button className="button primary" type="submit" disabled={saleSaving}>
-                  Registrar
-                </button>
-              </div>
-            </div>
+          <div className="buttonRow">
+            <button className="button primary" type="submit" disabled={saleSaving}>
+              {saleSaving ? 'Guardando...' : 'Registrar venta'}
+            </button>
           </div>
         </form>
       </div>

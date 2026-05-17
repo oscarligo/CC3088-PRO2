@@ -1,229 +1,61 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { apiJson, apiNoContent } from '../../api'
+import { useEffect } from 'react'
+import { useProductsManager } from '../../hooks/useProductsManager'
 
-type Product = {
-  id_product: number
-  name: string
-  unit_price: number
-  stock: number
-  id_category: number
-  id_supplier: number
-}
-
-type Category = {
-  id_category: number
-  name: string
-  description: string | null
-}
-
-type Supplier = {
-  id_supplier: number
-  name: string
-  email: string | null
-  phone: string | null
-}
-
-type Props = {
-  apiBaseUrl: string
-}
-
-export default function ProductsScreen({ apiBaseUrl }: Props) {
-  const productsUrl = `${apiBaseUrl}/api/products`
-  const categoriesUrl = `${apiBaseUrl}/api/categories`
-  const suppliersUrl = `${apiBaseUrl}/api/suppliers`
-
-  const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-
-  const categoryById = useMemo(() => {
-    const map = new Map<number, Category>()
-    for (const c of categories) map.set(c.id_category, c)
-    return map
-  }, [categories])
-
-  const supplierById = useMemo(() => {
-    const map = new Map<number, Supplier>()
-    for (const s of suppliers) map.set(s.id_supplier, s)
-    return map
-  }, [suppliers])
-
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
-
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [name, setName] = useState('')
-  const [unitPrice, setUnitPrice] = useState('')
-  const [stock, setStock] = useState('')
-  const [idCategory, setIdCategory] = useState<string>('')
-  const [idSupplier, setIdSupplier] = useState<string>('')
-
-  const resetForm = () => {
-    setEditingId(null)
-    setName('')
-    setUnitPrice('')
-    setStock('')
-    setFormError(null)
-    if (categories.length > 0) setIdCategory(String(categories[0].id_category))
-    if (suppliers.length > 0) setIdSupplier(String(suppliers[0].id_supplier))
-  }
-
-  const reload = async (signal?: AbortSignal) => {
-    const [p, c, s] = await Promise.all([
-      apiJson<Product[]>(productsUrl, { signal }),
-      apiJson<Category[]>(categoriesUrl, { signal }),
-      apiJson<Supplier[]>(suppliersUrl, { signal }),
-    ])
-
-    setProducts(p)
-    setCategories(c)
-    setSuppliers(s)
-
-    if (!idCategory && c.length > 0) setIdCategory(String(c[0].id_category))
-    if (!idSupplier && s.length > 0) setIdSupplier(String(s[0].id_supplier))
-  }
+export default function Products() {
+  const { state, categoryById, supplierById, setField, startEdit, startCreate, resetForm, submit, remove } =
+    useProductsManager()
 
   useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        await reload(controller.signal)
-      } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return
-        setError(e instanceof Error ? e.message : 'Error desconocido')
-      } finally {
-        setLoading(false)
-      }
+    if (!state.loading && state.form.idCategory === '' && state.categories.length > 0) {
+      setField('idCategory', String(state.categories[0].id_category))
     }
 
-    void load()
-
-    return () => controller.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productsUrl, categoriesUrl, suppliersUrl])
-
-  const startEdit = (p: Product) => {
-    setEditingId(p.id_product)
-    setName(p.name)
-    setUnitPrice(String(p.unit_price))
-    setStock(String(p.stock))
-    setIdCategory(String(p.id_category))
-    setIdSupplier(String(p.id_supplier))
-    setFormError(null)
-  }
-
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
-
-    const trimmedName = name.trim()
-    if (!trimmedName) {
-      setFormError('El nombre es obligatorio')
-      return
+    if (!state.loading && state.form.idSupplier === '' && state.suppliers.length > 0) {
+      setField('idSupplier', String(state.suppliers[0].id_supplier))
     }
-
-    const unitPriceNumber = Number(unitPrice)
-    if (!Number.isFinite(unitPriceNumber) || unitPriceNumber < 0) {
-      setFormError('El precio debe ser un número >= 0')
-      return
-    }
-
-    const stockNumber = Number(stock)
-    if (!Number.isInteger(stockNumber) || stockNumber < 0) {
-      setFormError('El stock debe ser un entero >= 0')
-      return
-    }
-
-    const idCategoryNumber = Number(idCategory)
-    const idSupplierNumber = Number(idSupplier)
-
-    if (!Number.isInteger(idCategoryNumber) || idCategoryNumber <= 0) {
-      setFormError('Selecciona una categoría válida')
-      return
-    }
-
-    if (!Number.isInteger(idSupplierNumber) || idSupplierNumber <= 0) {
-      setFormError('Selecciona un proveedor válido')
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    const body = JSON.stringify({
-      name: trimmedName,
-      unit_price: unitPriceNumber,
-      stock: stockNumber,
-      id_category: idCategoryNumber,
-      id_supplier: idSupplierNumber,
-    })
-
-    try {
-      if (editingId) {
-        await apiJson<Product>(`${productsUrl}/${editingId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        })
-      } else {
-        await apiJson<Product>(productsUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        })
-      }
-
-      await reload()
-      resetForm()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const remove = async (id: number) => {
-    setError(null)
-    setSaving(true)
-    try {
-      await apiNoContent(`${productsUrl}/${id}`, { method: 'DELETE' })
-      await reload()
-      if (editingId === id) resetForm()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido')
-    } finally {
-      setSaving(false)
-    }
-  }
+  }, [state.categories, state.form.idCategory, state.form.idSupplier, state.loading, state.suppliers, setField])
 
   return (
-    <section className="section">
-      <header className="sectionHeader">
+    <section className="page pageFrame section">
+      <header className="pageHeader">
+        <span className="eyebrow">Catálogo</span>
         <h2>Productos</h2>
+        <p className="muted">CRUD controlado por hook y validación local antes de llamar al backend.</p>
+        <div className="buttonRow">
+          <button className="button primary" type="button" onClick={startCreate} disabled={state.saving}>
+            Nuevo producto
+          </button>
+          <button className="button" type="button" onClick={() => void submit()} disabled={state.saving}>
+            Guardar cambios
+          </button>
+          <button className="button" type="button" onClick={resetForm} disabled={state.saving}>
+            Limpiar formulario
+          </button>
+        </div>
       </header>
 
-      {error ? (
+      {state.error ? (
         <p className="status error" role="alert">
-          Error: {error}
+          Error: {state.error}
         </p>
       ) : null}
 
-      <form className="form" onSubmit={submit}>
+      <form
+        className="form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit()
+        }}
+      >
         <div className="formRow">
           <label className="field">
             <span className="label">Nombre</span>
             <input
               className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={state.form.name}
+              onChange={(event) => setField('name', event.target.value)}
               placeholder="Nombre del producto"
-              disabled={saving}
+              disabled={state.saving}
               required
             />
           </label>
@@ -232,11 +64,11 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
             <span className="label">Precio</span>
             <input
               className="input"
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
+              value={state.form.unitPrice}
+              onChange={(event) => setField('unitPrice', event.target.value)}
               placeholder="0.00"
               inputMode="decimal"
-              disabled={saving}
+              disabled={state.saving}
               required
             />
           </label>
@@ -245,14 +77,19 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
             <span className="label">Stock</span>
             <input
               className="input"
-              value={stock}
-              onChange={(e) => setStock(e.target.value)}
+              value={state.form.stock}
+              onChange={(event) => setField('stock', event.target.value)}
               placeholder="0"
               inputMode="numeric"
-              disabled={saving}
+              disabled={state.saving}
               required
             />
           </label>
+
+          <div className="field actions">
+            <span className="label">Estado</span>
+            <p className="muted">{state.editingId != null ? `Editando #${state.editingId}` : 'Creando nuevo registro'}</p>
+          </div>
         </div>
 
         <div className="formRow">
@@ -260,13 +97,13 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
             <span className="label">Categoría</span>
             <select
               className="select"
-              value={idCategory}
-              onChange={(e) => setIdCategory(e.target.value)}
-              disabled={saving || categories.length === 0}
+              value={state.form.idCategory}
+              onChange={(event) => setField('idCategory', event.target.value)}
+              disabled={state.saving || state.categories.length === 0}
             >
-              {categories.map((c) => (
-                <option key={c.id_category} value={c.id_category}>
-                  {c.name}
+              {state.categories.map((category) => (
+                <option key={category.id_category} value={category.id_category}>
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -276,13 +113,13 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
             <span className="label">Proveedor</span>
             <select
               className="select"
-              value={idSupplier}
-              onChange={(e) => setIdSupplier(e.target.value)}
-              disabled={saving || suppliers.length === 0}
+              value={state.form.idSupplier}
+              onChange={(event) => setField('idSupplier', event.target.value)}
+              disabled={state.saving || state.suppliers.length === 0}
             >
-              {suppliers.map((s) => (
-                <option key={s.id_supplier} value={s.id_supplier}>
-                  {s.name}
+              {state.suppliers.map((supplier) => (
+                <option key={supplier.id_supplier} value={supplier.id_supplier}>
+                  {supplier.name}
                 </option>
               ))}
             </select>
@@ -291,31 +128,26 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
           <div className="field actions">
             <span className="label">Acciones</span>
             <div className="buttonRow">
-              <button className="button primary" type="submit" disabled={saving}>
-                {editingId ? 'Guardar' : 'Crear'}
+              <button className="button primary" type="submit" disabled={state.saving}>
+                {state.editingId != null ? 'Actualizar' : 'Crear'}
               </button>
-              <button
-                className="button"
-                type="button"
-                onClick={resetForm}
-                disabled={saving}
-              >
+              <button className="button" type="button" onClick={resetForm} disabled={state.saving}>
                 Cancelar
               </button>
             </div>
           </div>
         </div>
 
-        {formError ? (
+        {state.formError ? (
           <p className="status error" role="alert">
-            {formError}
+            {state.formError}
           </p>
         ) : null}
       </form>
 
-      {loading ? (
-        <p className="status">Cargando...</p>
-      ) : products.length === 0 ? (
+      {state.loading ? (
+        <p className="status">Cargando productos...</p>
+      ) : state.products.length === 0 ? (
         <p className="status">No hay productos.</p>
       ) : (
         <div className="tableWrap">
@@ -332,30 +164,20 @@ export default function ProductsScreen({ apiBaseUrl }: Props) {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.id_product}>
-                  <td className="mono">{p.id_product}</td>
-                  <td>{p.name}</td>
-                  <td className="mono">{p.unit_price.toFixed(2)}</td>
-                  <td className="mono">{p.stock}</td>
-                  <td>{categoryById.get(p.id_category)?.name ?? p.id_category}</td>
-                  <td>{supplierById.get(p.id_supplier)?.name ?? p.id_supplier}</td>
+              {state.products.map((product) => (
+                <tr key={product.id_product}>
+                  <td className="mono">{product.id_product}</td>
+                  <td>{product.name}</td>
+                  <td className="mono">{product.unit_price.toFixed(2)}</td>
+                  <td className="mono">{product.stock}</td>
+                  <td>{categoryById.get(product.id_category)?.name ?? product.id_category}</td>
+                  <td>{supplierById.get(product.id_supplier)?.name ?? product.id_supplier}</td>
                   <td className="right">
                     <div className="buttonRow compact">
-                      <button
-                        className="button"
-                        type="button"
-                        onClick={() => startEdit(p)}
-                        disabled={saving}
-                      >
+                      <button className="button" type="button" onClick={() => startEdit(product)} disabled={state.saving}>
                         Editar
                       </button>
-                      <button
-                        className="button danger"
-                        type="button"
-                        onClick={() => remove(p.id_product)}
-                        disabled={saving}
-                      >
+                      <button className="button danger" type="button" onClick={() => void remove(product.id_product)} disabled={state.saving}>
                         Eliminar
                       </button>
                     </div>
