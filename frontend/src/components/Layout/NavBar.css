@@ -1,0 +1,71 @@
+.appShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.appHeader {
+  padding: 20px 24px 0;
+}
+
+.appHeaderCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  backdrop-filter: blur(18px);
+}
+
+.appBrand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brandCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.brandTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-strong);
+  letter-spacing: -0.03em;
+}
+
+.brandSubtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.appNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.navLink {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.navLink.active {
+  background: var(--accent-soft);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: var(--text-strong);
+}
+
+.appMain {
+  padding: 24px;
+}

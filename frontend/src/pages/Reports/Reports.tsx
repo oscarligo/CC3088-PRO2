@@ -12,6 +12,7 @@ import type {
   SupplierProductCount,
   TopClient,
 } from '../../types/domain'
+import './Reports.css'
 
 export default function Reports() {
   const { apiBaseUrl } = useAppConfig()
@@ -148,7 +149,7 @@ export default function Reports() {
   }
 
   return (
-    <section className="page pageFrame section">
+    <section className="page reportsPage pageFrame section">
       <header className="pageHeader">
         <span className="eyebrow">Analítica</span>
         <h2>Reportes</h2>
@@ -167,14 +168,14 @@ export default function Reports() {
         </p>
       ) : null}
 
-      <div className="gridTwo">
-        <div className="panel">
+      <div className="reportsGrid">
+        <div className="reportPanel">
           <h3>JOIN: Detalle de ventas</h3>
           <p className="muted">API: <code>{urls.saleLines}</code></p>
           {saleLines.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -207,13 +208,13 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="panel">
+        <div className="reportPanel">
           <h3>JOIN + GROUP BY: Productos por proveedor</h3>
           <p className="muted">API: <code>{urls.supplierProductCount}</code></p>
           {supplierCounts.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -236,13 +237,13 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="panel">
+        <div className="reportPanel">
           <h3>GROUP BY: Ventas por categoría</h3>
           <p className="muted">API: <code>{urls.categorySales}</code></p>
           {categorySales.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -267,13 +268,13 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="panel">
+        <div className="reportPanel">
           <h3>SUBQUERY: Productos sin ventas</h3>
           <p className="muted">API: <code>{urls.unsoldProducts}</code></p>
           {unsoldProducts.length === 0 ? (
             <p className="status">Sin datos (todos tienen ventas).</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -300,13 +301,13 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="panel">
+        <div className="reportPanel">
           <h3>SUBQUERY: Clientes con al menos 2 ventas</h3>
           <p className="muted">API: <code>{urls.clientsMinSales}</code></p>
           {clientsMinSales.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -331,13 +332,13 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="panel">
+        <div className="reportPanel">
           <h3>CTE: Top clientes por gasto</h3>
           <p className="muted">API: <code>{urls.topClients}</code></p>
           {topClients.length === 0 ? (
             <p className="status">Sin datos.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="reportTableWrap tableWrap">
               <table className="table">
                 <thead>
                   <tr>
@@ -363,7 +364,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="panel">
+      <div className="reportPanel">
         <h3>Transacción: Registrar venta</h3>
         <p className="muted">
           Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.

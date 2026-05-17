@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
-import AppLayout from './components/Layout/AppLayout'
-import { AppConfigProvider } from './context/AppConfigContext/AppConfigContext'
+import AppLayout from './components/Layout/NavBar'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Inventory from './pages/Inventory/Inventory'
 import NotFound from './pages/NotFound/NotFound'
@@ -10,7 +9,6 @@ import Suppliers from './pages/Suppliers/Suppliers'
 
 function App() {
   return (
-    <AppConfigProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AppLayout />}>
@@ -24,7 +22,6 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </AppConfigProvider>
   )
 }
 

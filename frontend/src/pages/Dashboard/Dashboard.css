@@ -1,0 +1,51 @@
+.dashboardPage .dashboardHero {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(255, 255, 255, 0.82)),
+    var(--surface);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 16px;
+}
+
+.dashboardPage .dashboardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboardPage .dashboardCardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboardPage .dashboardCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboardPage .dashboardCard strong {
+  font-size: 1.05rem;
+  color: var(--text-strong);
+}
+
+.dashboardPage .dashboardCard span {
+  color: var(--muted);
+}

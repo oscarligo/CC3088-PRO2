@@ -1,0 +1,9 @@
+.productsPage .productsToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.productsPage .productsState {
+  color: var(--muted);
+}

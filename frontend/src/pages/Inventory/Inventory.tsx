@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
 import { getInventory } from '../../services/inventoryService'
 import type { InventoryProduct } from '../../types/domain'
+import './Inventory.css'
 
 export default function Inventory() {
   const { apiBaseUrl } = useAppConfig()
@@ -33,7 +34,7 @@ export default function Inventory() {
   }, [apiBaseUrl])
 
   return (
-    <section className="page pageFrame section">
+    <section className="page inventoryPage pageFrame section">
       <header className="pageHeader">
         <span className="eyebrow">Vista</span>
         <h2>Inventario</h2>

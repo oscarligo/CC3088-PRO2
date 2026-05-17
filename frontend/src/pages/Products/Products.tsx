@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useProductsManager } from '../../hooks/useProductsManager'
+import './Products.css'
 
 export default function Products() {
   const { state, categoryById, supplierById, setField, startEdit, startCreate, resetForm, submit, remove } =
@@ -16,7 +17,7 @@ export default function Products() {
   }, [state.categories, state.form.idCategory, state.form.idSupplier, state.loading, state.suppliers, setField])
 
   return (
-    <section className="page pageFrame section">
+    <section className="page productsPage pageFrame section">
       <header className="pageHeader">
         <span className="eyebrow">Catálogo</span>
         <h2>Productos</h2>

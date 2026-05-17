@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
+import { useTheme } from '../../context/ThemeContext/useTheme'
+import './NavBar.css'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
@@ -8,7 +10,9 @@ const links = [
   { to: '/reports', label: 'Reportes' },
 ]
 
-export default function AppLayout() {
+export default function NavBar() {
+  const { theme, toggleTheme } = useTheme()
+
   return (
     <div className="appShell">
       <header className="appHeader">
@@ -16,7 +20,7 @@ export default function AppLayout() {
           <div className="appBrand">
             <div className="brandCopy">
               <h1 className="brandTitle">CC3088-PRO2</h1>
-              <p className="brandSubtitle">React Router, servicios y formularios controlados</p>
+              <p className="brandSubtitle">Capas separadas, tema persistente y rutas limpias</p>
             </div>
 
             <nav className="appNav" aria-label="Principal">
@@ -30,6 +34,11 @@ export default function AppLayout() {
                   {link.label}
                 </NavLink>
               ))}
+
+              <button className="themeToggle" type="button" onClick={toggleTheme} aria-label="Cambiar tema">
+                <span className="themeToggleMark" aria-hidden="true" />
+                {theme === 'dark' ? 'Claro' : 'Oscuro'}
+              </button>
             </nav>
           </div>
         </div>

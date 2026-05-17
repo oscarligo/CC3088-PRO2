@@ -1,10 +1,11 @@
 import { useSuppliersManager } from '../../hooks/useSuppliersManager'
+import './Suppliers.css'
 
 export default function Suppliers() {
   const { state, setField, startEdit, resetForm, submit, remove } = useSuppliersManager()
 
   return (
-    <section className="page pageFrame section">
+    <section className="page suppliersPage pageFrame section">
       <header className="pageHeader">
         <span className="eyebrow">Catálogo</span>
         <h2>Proveedores</h2>
@@ -12,7 +13,7 @@ export default function Suppliers() {
         <div className="buttonRow">
           <button className="button primary" type="button" onClick={resetForm} disabled={state.saving}>
             Nuevo proveedor
-          </button>
+           </button>
         </div>
       </header>
 

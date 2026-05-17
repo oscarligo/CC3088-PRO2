@@ -1,0 +1,7 @@
+.notFoundPage {
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 12px;
+}

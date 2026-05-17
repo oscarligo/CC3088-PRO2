@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import './Dashboard.css'
 
 const cards = [
   { title: 'Productos', description: 'CRUD con categorías y proveedores', to: '/products' },
@@ -9,7 +10,7 @@ const cards = [
 
 export default function Dashboard() {
   return (
-    <section className="page pageFrame">
+    <section className="page dashboardPage pageFrame">
       <header className="pageHeader">
         <span className="eyebrow">Inicio</span>
         <h2>Panel principal</h2>
