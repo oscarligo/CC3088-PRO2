@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import StatusMessage from '../../components/StatusMessage/StatusMessage'
 import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
 import { getInventory } from '../../services/inventoryService'
 import type { InventoryProduct } from '../../types/domain'
@@ -35,20 +37,14 @@ export default function Inventory() {
 
   return (
     <section className="page inventoryPage pageFrame section">
-      <header className="pageHeader">
-        <span className="eyebrow">Vista</span>
-        <h2>Inventario</h2>
-        <p className="muted">Listado basado en el view del backend, obtenido desde un servicio dedicado.</p>
-      </header>
+      <PageHeader eyebrow="Vista" title="Inventario" description="Listado basado en el view del backend, obtenido desde un servicio dedicado." />
 
       {loading ? (
-        <p className="status">Cargando productos...</p>
+        <StatusMessage kind="loading">Cargando productos...</StatusMessage>
       ) : error ? (
-        <p className="status error" role="alert">
-          Error: {error}
-        </p>
+        <StatusMessage kind="error">Error: {error}</StatusMessage>
       ) : products.length === 0 ? (
-        <p className="status">No hay productos.</p>
+        <StatusMessage kind="empty">No hay productos.</StatusMessage>
       ) : (
         <div className="tableWrap">
           <table className="table">

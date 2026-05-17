@@ -1,10 +1,10 @@
 import './NotFound.css'
+import PageHeader from '../../components/PageHeader/PageHeader'
 
 export default function NotFound() {
     return (
         <div className="notFoundPage pageFrame">
-            <h1>404 - Página no encontrada</h1>
-            <p>Lo sentimos, la página que buscas no existe.</p>
+            <PageHeader title="404 - Página no encontrada" description="Lo sentimos, la página que buscas no existe." />
         </div>
     )       
 }

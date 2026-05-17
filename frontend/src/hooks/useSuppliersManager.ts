@@ -9,13 +9,13 @@ import {
 import type { Supplier } from '../types/domain'
 import { optionalEmail, optionalPhone, requiredText, validateWithSchema } from '../utils/validation'
 
-type SupplierFormState = {
+export type SupplierFormState = {
   name: string
   email: string
   phone: string
 }
 
-type State = {
+export type SupplierManagerState = {
   suppliers: Supplier[]
   loading: boolean
   saving: boolean
@@ -41,7 +41,7 @@ const initialForm = {
   phone: '',
 }
 
-const initialState: State = {
+const initialState: SupplierManagerState = {
   suppliers: [],
   loading: true,
   saving: false,
@@ -51,7 +51,7 @@ const initialState: State = {
   form: initialForm,
 }
 
-function reducer(state: State, action: Action): State {
+function reducer(state: SupplierManagerState, action: Action): SupplierManagerState {
   switch (action.type) {
     case 'loading':
       return { ...state, loading: action.value }

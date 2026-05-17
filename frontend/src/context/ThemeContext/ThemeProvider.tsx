@@ -1,14 +1,5 @@
-import { createContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
-
-export type ThemeMode = 'light' | 'dark'
-
-type ThemeContextValue = {
-  theme: ThemeMode
-  setTheme: (theme: ThemeMode) => void
-  toggleTheme: () => void
-}
-
-export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
+import { useEffect, useMemo, useState, type PropsWithChildren } from 'react'
+import { ThemeContext, type ThemeMode } from './themeContext'
 
 function getInitialTheme(): ThemeMode {
   const savedTheme = window.localStorage.getItem('theme')

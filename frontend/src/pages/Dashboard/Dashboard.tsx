@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import PageHeader from '../../components/PageHeader/PageHeader'
 import './Dashboard.css'
 
 const cards = [
@@ -11,14 +12,11 @@ const cards = [
 export default function Dashboard() {
   return (
     <section className="page dashboardPage pageFrame">
-      <header className="pageHeader">
-        <span className="eyebrow">Inicio</span>
-        <h2>Panel principal</h2>
-        <p className="muted">
-          La aplicación ya queda separada por rutas y preparada para que la lógica viva en servicios,
-          contexto y hooks.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Inicio"
+        title="Panel principal"
+        description="La aplicación ya queda separada por rutas y preparada para que la lógica viva en servicios, contexto y hooks."
+      />
 
       <div className="dashboardHero">
         <div>

@@ -1,0 +1,21 @@
+.pageHeaderBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pageHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pageHeaderDescription {
+  color: var(--muted);
+}
+
+.pageHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -1,0 +1,17 @@
+.statusMessage {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+.statusMessage.isError {
+  border-color: rgba(180, 35, 24, 0.3);
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.statusMessage.isLoading {
+  opacity: 0.92;
+}

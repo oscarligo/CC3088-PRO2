@@ -1,0 +1,9 @@
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formField.actions {
+  justify-content: flex-end;
+}

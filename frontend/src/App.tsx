@@ -6,9 +6,11 @@ import NotFound from './pages/NotFound/NotFound'
 import Products from './pages/Products/Products'
 import Reports from './pages/Reports/Reports'
 import Suppliers from './pages/Suppliers/Suppliers'
+import { AppConfigProvider } from './context/AppConfigContext/AppConfigContext'
 
 function App() {
   return (
+    <AppConfigProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<AppLayout />}>
@@ -22,6 +24,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+    </AppConfigProvider>
   )
 }
 

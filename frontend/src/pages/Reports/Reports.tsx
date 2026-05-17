@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import PageHeader from '../../components/PageHeader/PageHeader'
+import StatusMessage from '../../components/StatusMessage/StatusMessage'
 import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
 import { createSale, getReportData } from '../../services/reportsService'
 import type {
@@ -12,6 +14,8 @@ import type {
   SupplierProductCount,
   TopClient,
 } from '../../types/domain'
+import ReportSection from './ReportSection'
+import SaleForm from './SaleForm'
 import './Reports.css'
 
 export default function Reports() {
@@ -103,8 +107,7 @@ export default function Reports() {
     }
   }
 
-  const submitSale = async (event: FormEvent) => {
-    event.preventDefault()
+  const submitSale = async () => {
     setSaleError(null)
     setSaleSuccess(null)
 
@@ -150,30 +153,28 @@ export default function Reports() {
 
   return (
     <section className="page reportsPage pageFrame section">
-      <header className="pageHeader">
-        <span className="eyebrow">Analítica</span>
-        <h2>Reportes</h2>
-        <p className="muted">Consultas de SQL y registro de ventas coordinados desde servicios reutilizables.</p>
-        <div className="buttonRow">
-          <button className="button" type="button" onClick={() => void reload()} disabled={loading}>
-            Recargar
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Analítica"
+        title="Reportes"
+        description="Consultas de SQL y registro de ventas coordinados desde servicios reutilizables."
+        actions={
+          <div className="buttonRow">
+            <button className="button" type="button" onClick={() => void reload()} disabled={loading}>
+              Recargar
+            </button>
+          </div>
+        }
+      />
 
-      {loading ? <p className="status">Cargando reportes...</p> : null}
+      {loading ? <StatusMessage kind="loading">Cargando reportes...</StatusMessage> : null}
       {error ? (
-        <p className="status error" role="alert">
-          Error: {error}
-        </p>
+        <StatusMessage kind="error">Error: {error}</StatusMessage>
       ) : null}
 
       <div className="reportsGrid">
-        <div className="reportPanel">
-          <h3>JOIN: Detalle de ventas</h3>
-          <p className="muted">API: <code>{urls.saleLines}</code></p>
+        <ReportSection title="JOIN: Detalle de ventas" api={urls.saleLines}>
           {saleLines.length === 0 ? (
-            <p className="status">Sin datos.</p>
+            <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -206,13 +207,11 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
 
-        <div className="reportPanel">
-          <h3>JOIN + GROUP BY: Productos por proveedor</h3>
-          <p className="muted">API: <code>{urls.supplierProductCount}</code></p>
+        <ReportSection title="JOIN + GROUP BY: Productos por proveedor" api={urls.supplierProductCount}>
           {supplierCounts.length === 0 ? (
-            <p className="status">Sin datos.</p>
+            <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -235,13 +234,11 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
 
-        <div className="reportPanel">
-          <h3>GROUP BY: Ventas por categoría</h3>
-          <p className="muted">API: <code>{urls.categorySales}</code></p>
+        <ReportSection title="GROUP BY: Ventas por categoría" api={urls.categorySales}>
           {categorySales.length === 0 ? (
-            <p className="status">Sin datos.</p>
+            <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -266,13 +263,11 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
 
-        <div className="reportPanel">
-          <h3>SUBQUERY: Productos sin ventas</h3>
-          <p className="muted">API: <code>{urls.unsoldProducts}</code></p>
+        <ReportSection title="SUBQUERY: Productos sin ventas" api={urls.unsoldProducts}>
           {unsoldProducts.length === 0 ? (
-            <p className="status">Sin datos (todos tienen ventas).</p>
+            <StatusMessage kind="empty">Sin datos (todos tienen ventas).</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -299,13 +294,11 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
 
-        <div className="reportPanel">
-          <h3>SUBQUERY: Clientes con al menos 2 ventas</h3>
-          <p className="muted">API: <code>{urls.clientsMinSales}</code></p>
+        <ReportSection title="SUBQUERY: Clientes con al menos 2 ventas" api={urls.clientsMinSales}>
           {clientsMinSales.length === 0 ? (
-            <p className="status">Sin datos.</p>
+            <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -330,13 +323,11 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
 
-        <div className="reportPanel">
-          <h3>CTE: Top clientes por gasto</h3>
-          <p className="muted">API: <code>{urls.topClients}</code></p>
+        <ReportSection title="CTE: Top clientes por gasto" api={urls.topClients}>
           {topClients.length === 0 ? (
-            <p className="status">Sin datos.</p>
+            <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
               <table className="table">
@@ -361,77 +352,26 @@ export default function Reports() {
               </table>
             </div>
           )}
-        </div>
+        </ReportSection>
       </div>
 
-      <div className="reportPanel">
-        <h3>Transacción: Registrar venta</h3>
-        <p className="muted">
-          Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.
-        </p>
-        <p className="muted">API: <code>{urls.sales}</code></p>
-
-        {saleSuccess ? <p className="status">{saleSuccess}</p> : null}
-        {saleError ? (
-          <p className="status error" role="alert">
-            {saleError}
-          </p>
-        ) : null}
-
-        <form
-          className="form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void submitSale(event)
-          }}
-        >
-          <div className="formRow">
-            <label className="field">
-              <span className="label">Cliente</span>
-              <select className="select" value={idClient} onChange={(event) => setIdClient(event.target.value)} disabled={saleSaving || clients.length === 0}>
-                {clients.map((client) => (
-                  <option key={client.id_client} value={client.id_client}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Empleado</span>
-              <select className="select" value={idEmployee} onChange={(event) => setIdEmployee(event.target.value)} disabled={saleSaving || employees.length === 0}>
-                {employees.map((employee) => (
-                  <option key={employee.id_employee} value={employee.id_employee}>
-                    {employee.name} — {employee.role}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Producto</span>
-              <select className="select" value={idProduct} onChange={(event) => setIdProduct(event.target.value)} disabled={saleSaving || products.length === 0}>
-                {products.map((product) => (
-                  <option key={product.id_product} value={product.id_product}>
-                    {product.name} (stock: {product.stock})
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="label">Cantidad</span>
-              <input className="input" value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="numeric" disabled={saleSaving} />
-            </label>
-          </div>
-
-          <div className="buttonRow">
-            <button className="button primary" type="submit" disabled={saleSaving}>
-              {saleSaving ? 'Guardando...' : 'Registrar venta'}
-            </button>
-          </div>
-        </form>
-      </div>
+      <SaleForm
+        clients={clients}
+        employees={employees}
+        products={products}
+        idClient={idClient}
+        idEmployee={idEmployee}
+        idProduct={idProduct}
+        amount={amount}
+        saving={saleSaving}
+        error={saleError}
+        success={saleSuccess}
+        onClientChange={setIdClient}
+        onEmployeeChange={setIdEmployee}
+        onProductChange={setIdProduct}
+        onAmountChange={setAmount}
+        onSubmit={() => void submitSale()}
+      />
     </section>
   )
 }

@@ -16,7 +16,7 @@ import {
   validateWithSchema,
 } from '../utils/validation'
 
-type ProductFormState = {
+export type ProductFormState = {
   name: string
   unitPrice: string
   stock: string
@@ -24,7 +24,7 @@ type ProductFormState = {
   idSupplier: string
 }
 
-type State = {
+export type ProductManagerState = {
   products: Product[]
   categories: Category[]
   suppliers: Supplier[]
@@ -54,7 +54,7 @@ const initialForm = {
   idSupplier: '',
 }
 
-const initialState: State = {
+const initialState: ProductManagerState = {
   products: [],
   categories: [],
   suppliers: [],
@@ -66,7 +66,7 @@ const initialState: State = {
   form: initialForm,
 }
 
-function reducer(state: State, action: Action): State {
+function reducer(state: ProductManagerState, action: Action): ProductManagerState {
   switch (action.type) {
     case 'loading':
       return { ...state, loading: action.value }
