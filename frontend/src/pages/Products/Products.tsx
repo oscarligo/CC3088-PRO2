@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { apiJson, apiNoContent } from '../api'
+import { apiJson, apiNoContent } from '../../api'
 
 type Product = {
   id_product: number
@@ -27,7 +27,7 @@ type Props = {
   apiBaseUrl: string
 }
 
-export function ProductsScreen({ apiBaseUrl }: Props) {
+export default function ProductsScreen({ apiBaseUrl }: Props) {
   const productsUrl = `${apiBaseUrl}/api/products`
   const categoriesUrl = `${apiBaseUrl}/api/categories`
   const suppliersUrl = `${apiBaseUrl}/api/suppliers`

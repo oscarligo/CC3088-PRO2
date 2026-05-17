@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { apiJson, apiNoContent } from '../api'
+import { apiJson, apiNoContent } from '../../api'
 
 type Supplier = {
   id_supplier: number
@@ -12,7 +12,7 @@ type Props = {
   apiBaseUrl: string
 }
 
-export function SuppliersScreen({ apiBaseUrl }: Props) {
+export default function SuppliersScreen({ apiBaseUrl }: Props) {
   const suppliersUrl = `${apiBaseUrl}/api/suppliers`
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([])

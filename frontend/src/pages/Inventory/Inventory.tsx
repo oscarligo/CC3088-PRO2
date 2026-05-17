@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiJson } from '../api'
+import { apiJson } from '../../api'
 
 export type InventoryProduct = {
   id_product: number
@@ -14,7 +14,7 @@ type Props = {
   apiBaseUrl: string
 }
 
-export function InventoryScreen({ apiBaseUrl }: Props) {
+export  default function InventoryScreen({ apiBaseUrl }: Props) {
   const inventoryUrl = `${apiBaseUrl}/api/products/inventory`
 
   const [products, setProducts] = useState<InventoryProduct[]>([])

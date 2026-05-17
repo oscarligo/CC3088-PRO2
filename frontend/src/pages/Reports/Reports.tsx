@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { apiJson } from '../api'
+import { apiJson } from '../../api'
 
 type SaleLine = {
   id_sale: number
@@ -73,7 +73,7 @@ type Props = {
   apiBaseUrl: string
 }
 
-export function ReportsScreen({ apiBaseUrl }: Props) {
+export default function ReportsScreen({ apiBaseUrl }: Props) {
   const urls = useMemo(
     () => ({
       saleLines: `${apiBaseUrl}/api/reports/sale-lines`,
