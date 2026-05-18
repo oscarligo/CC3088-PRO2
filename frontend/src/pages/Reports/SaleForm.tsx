@@ -1,42 +1,54 @@
+import { useEffect } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 import FormField from '../../components/FormField/FormField'
 import type { Client, Employee, Product } from '../../types/domain'
+import { saleFormSchema, type SaleFormValues } from '../../schemas/forms'
 import './Reports.css'
 
 type SaleFormProps = {
   clients: Client[]
   employees: Employee[]
   products: Product[]
-  idClient: string
-  idEmployee: string
-  idProduct: string
-  amount: string
   saving: boolean
   error: string | null
   success: string | null
-  onClientChange: (value: string) => void
-  onEmployeeChange: (value: string) => void
-  onProductChange: (value: string) => void
-  onAmountChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (values: SaleFormValues) => Promise<boolean> | Promise<void> | void
 }
 
 export default function SaleForm({
   clients,
   employees,
   products,
-  idClient,
-  idEmployee,
-  idProduct,
-  amount,
   saving,
   error,
   success,
-  onClientChange,
-  onEmployeeChange,
-  onProductChange,
-  onAmountChange,
   onSubmit,
 }: SaleFormProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<SaleFormValues>({
+    resolver: zodResolver(saleFormSchema),
+    defaultValues: {
+      idClient: clients[0] ? String(clients[0].id_client) : '',
+      idEmployee: employees[0] ? String(employees[0].id_employee) : '',
+      idProduct: products[0] ? String(products[0].id_product) : '',
+      amount: '1',
+    },
+  })
+
+  useEffect(() => {
+    reset({
+      idClient: clients[0] ? String(clients[0].id_client) : '',
+      idEmployee: employees[0] ? String(employees[0].id_employee) : '',
+      idProduct: products[0] ? String(products[0].id_product) : '',
+      amount: '1',
+    })
+  }, [clients, employees, products, reset])
+
   return (
     <section className="reportPanel">
       <h3>Transacción: Registrar venta</h3>
@@ -53,14 +65,13 @@ export default function SaleForm({
 
       <form
         className="form"
-        onSubmit={(event) => {
-          event.preventDefault()
-          onSubmit()
-        }}
+        onSubmit={handleSubmit(async (values) => {
+          await onSubmit(values)
+        })}
       >
         <div className="formRow">
-          <FormField label="Cliente">
-            <select className="select" value={idClient} onChange={(event) => onClientChange(event.target.value)} disabled={saving || clients.length === 0}>
+          <FormField label="Cliente" error={errors.idClient?.message}>
+            <select className="select" disabled={saving || clients.length === 0} {...register('idClient')}>
               {clients.map((client) => (
                 <option key={client.id_client} value={client.id_client}>
                   {client.name}
@@ -69,8 +80,8 @@ export default function SaleForm({
             </select>
           </FormField>
 
-          <FormField label="Empleado">
-            <select className="select" value={idEmployee} onChange={(event) => onEmployeeChange(event.target.value)} disabled={saving || employees.length === 0}>
+          <FormField label="Empleado" error={errors.idEmployee?.message}>
+            <select className="select" disabled={saving || employees.length === 0} {...register('idEmployee')}>
               {employees.map((employee) => (
                 <option key={employee.id_employee} value={employee.id_employee}>
                   {employee.name} — {employee.role}
@@ -79,8 +90,8 @@ export default function SaleForm({
             </select>
           </FormField>
 
-          <FormField label="Producto">
-            <select className="select" value={idProduct} onChange={(event) => onProductChange(event.target.value)} disabled={saving || products.length === 0}>
+          <FormField label="Producto" error={errors.idProduct?.message}>
+            <select className="select" disabled={saving || products.length === 0} {...register('idProduct')}>
               {products.map((product) => (
                 <option key={product.id_product} value={product.id_product}>
                   {product.name} (stock: {product.stock})
@@ -89,8 +100,8 @@ export default function SaleForm({
             </select>
           </FormField>
 
-          <FormField label="Cantidad">
-            <input className="input" value={amount} onChange={(event) => onAmountChange(event.target.value)} inputMode="numeric" disabled={saving} />
+          <FormField label="Cantidad" error={errors.amount?.message}>
+            <input className="input" inputMode="numeric" disabled={saving} {...register('amount')} />
           </FormField>
         </div>
 

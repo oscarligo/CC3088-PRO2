@@ -7,3 +7,13 @@
 .formField.actions {
   justify-content: flex-end;
 }
+
+.formFieldHint {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.formFieldError {
+  color: var(--danger);
+  font-size: 0.875rem;
+}

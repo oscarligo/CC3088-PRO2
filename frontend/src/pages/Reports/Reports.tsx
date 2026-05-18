@@ -14,6 +14,7 @@ import type {
   SupplierProductCount,
   TopClient,
 } from '../../types/domain'
+import type { SaleFormValues } from '../../schemas/forms'
 import ReportSection from './ReportSection'
 import SaleForm from './SaleForm'
 import './Reports.css'
@@ -48,10 +49,6 @@ export default function Reports() {
   const [saleSaving, setSaleSaving] = useState(false)
   const [saleError, setSaleError] = useState<string | null>(null)
   const [saleSuccess, setSaleSuccess] = useState<string | null>(null)
-  const [idClient, setIdClient] = useState<string>('')
-  const [idEmployee, setIdEmployee] = useState<string>('')
-  const [idProduct, setIdProduct] = useState<string>('')
-  const [amount, setAmount] = useState<string>('1')
 
   const loadAll = async (signal?: AbortSignal) => {
     const data = await getReportData(apiBaseUrl, signal)
@@ -66,9 +63,6 @@ export default function Reports() {
     setEmployees(data.employees)
     setProducts(data.products)
 
-    if (!idClient && data.clients.length > 0) setIdClient(String(data.clients[0].id_client))
-    if (!idEmployee && data.employees.length > 0) setIdEmployee(String(data.employees[0].id_employee))
-    if (!idProduct && data.products.length > 0) setIdProduct(String(data.products[0].id_product))
   }
 
   useEffect(() => {
@@ -107,30 +101,14 @@ export default function Reports() {
     }
   }
 
-  const submitSale = async () => {
+  const submitSale = async (values: SaleFormValues) => {
     setSaleError(null)
     setSaleSuccess(null)
 
-    const idEmployeeNumber = Number(idEmployee)
-    const idProductNumber = Number(idProduct)
-    const amountNumber = Number(amount)
-
-    if (!Number.isInteger(idEmployeeNumber) || idEmployeeNumber <= 0) {
-      setSaleError('Selecciona un empleado válido')
-      return
-    }
-
-    if (!Number.isInteger(idProductNumber) || idProductNumber <= 0) {
-      setSaleError('Selecciona un producto válido')
-      return
-    }
-
-    if (!Number.isInteger(amountNumber) || amountNumber <= 0) {
-      setSaleError('La cantidad debe ser un entero > 0')
-      return
-    }
-
-    const idClientNumber = Number(idClient)
+    const idClientNumber = Number(values.idClient)
+    const idEmployeeNumber = Number(values.idEmployee)
+    const idProductNumber = Number(values.idProduct)
+    const amountNumber = Number(values.amount)
     const idClientPayload = Number.isInteger(idClientNumber) && idClientNumber > 0 ? idClientNumber : null
 
     setSaleSaving(true)
@@ -359,18 +337,10 @@ export default function Reports() {
         clients={clients}
         employees={employees}
         products={products}
-        idClient={idClient}
-        idEmployee={idEmployee}
-        idProduct={idProduct}
-        amount={amount}
         saving={saleSaving}
         error={saleError}
         success={saleSuccess}
-        onClientChange={setIdClient}
-        onEmployeeChange={setIdEmployee}
-        onProductChange={setIdProduct}
-        onAmountChange={setAmount}
-        onSubmit={() => void submitSale()}
+        onSubmit={submitSale}
       />
     </section>
   )

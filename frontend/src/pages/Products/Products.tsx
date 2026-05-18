@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import PageHeader from '../../components/PageHeader/PageHeader'
 import StatusMessage from '../../components/StatusMessage/StatusMessage'
 import { useProductsManager } from '../../hooks/useProductsManager'
@@ -7,18 +6,8 @@ import ProductTable from './ProductTable'
 import './Products.css'
 
 export default function Products() {
-  const { state, categoryById, supplierById, setField, startEdit, startCreate, resetForm, submit, remove } =
+  const { state, categoryById, supplierById, startEdit, startCreate, resetForm, submit, remove } =
     useProductsManager()
-
-  useEffect(() => {
-    if (!state.loading && state.form.idCategory === '' && state.categories.length > 0) {
-      setField('idCategory', String(state.categories[0].id_category))
-    }
-
-    if (!state.loading && state.form.idSupplier === '' && state.suppliers.length > 0) {
-      setField('idSupplier', String(state.suppliers[0].id_supplier))
-    }
-  }, [state.categories, state.form.idCategory, state.form.idSupplier, state.loading, state.suppliers, setField])
 
   return (
     <section className="page productsPage pageFrame section">
@@ -31,9 +20,6 @@ export default function Products() {
             <button className="button primary" type="button" onClick={startCreate} disabled={state.saving}>
               Nuevo producto
             </button>
-            <button className="button" type="button" onClick={() => void submit()} disabled={state.saving}>
-              Guardar cambios
-            </button>
             <button className="button" type="button" onClick={resetForm} disabled={state.saving}>
               Limpiar formulario
             </button>
@@ -45,7 +31,7 @@ export default function Products() {
         <StatusMessage kind="error">Error: {state.error}</StatusMessage>
       ) : null}
 
-      <ProductForm state={state} onFieldChange={setField} onSubmit={submit} onReset={resetForm} />
+      <ProductForm state={state} onSubmit={submit} onReset={resetForm} />
 
       {state.loading ? (
         <StatusMessage kind="loading">Cargando productos...</StatusMessage>

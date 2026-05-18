@@ -19,8 +19,7 @@ export default function NavBar() {
         <div className="appHeaderCard">
           <div className="appBrand">
             <div className="brandCopy">
-              <h1 className="brandTitle">CC3088-PRO2</h1>
-              <p className="brandSubtitle">Capas separadas, tema persistente y rutas limpias</p>
+              <h1 className="brandTitle">CC3062-PRO2</h1>
             </div>
 
             <nav className="appNav" aria-label="Principal">

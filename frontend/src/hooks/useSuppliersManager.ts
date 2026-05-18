@@ -7,7 +7,7 @@ import {
   updateSupplier,
 } from '../services/suppliersService'
 import type { Supplier } from '../types/domain'
-import { optionalEmail, optionalPhone, requiredText, validateWithSchema } from '../utils/validation'
+import type { SupplierFormValues } from '../schemas/forms'
 
 export type SupplierFormState = {
   name: string
@@ -120,24 +120,13 @@ export function useSuppliersManager() {
 
   const resetForm = () => dispatch({ type: 'resetForm' })
 
-  const submit = async () => {
+  const submit = async (values: SupplierFormValues) => {
     dispatch({ type: 'formError', value: null })
 
-    const formErrors = validateWithSchema(state.form, {
-      name: requiredText('El nombre es obligatorio'),
-      email: optionalEmail('Ingresa un correo válido o deja el campo vacío'),
-      phone: optionalPhone('Ingresa un teléfono válido o deja el campo vacío'),
-    })
-
-    if (Object.keys(formErrors).length > 0) {
-      dispatch({ type: 'formError', value: Object.values(formErrors)[0] ?? 'Revisa los campos' })
-      return false
-    }
-
     const payload = {
-      name: state.form.name.trim(),
-      email: state.form.email.trim() ? state.form.email.trim() : null,
-      phone: state.form.phone.trim() ? state.form.phone.trim() : null,
+      name: values.name.trim(),
+      email: values.email.trim() ? values.email.trim() : null,
+      phone: values.phone.trim() ? values.phone.trim() : null,
     }
 
     dispatch({ type: 'saving', value: true })

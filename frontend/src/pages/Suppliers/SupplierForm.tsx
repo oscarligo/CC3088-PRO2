@@ -1,56 +1,68 @@
+import { useEffect } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 import type { SupplierManagerState } from '../../hooks/useSuppliersManager'
 import FormField from '../../components/FormField/FormField'
+import { supplierFormSchema, type SupplierFormValues } from '../../schemas/forms'
 import './Suppliers.css'
 
 type SupplierFormProps = {
   state: SupplierManagerState
-  onFieldChange: (field: 'name' | 'email' | 'phone', value: string) => void
-  onSubmit: () => void
+  onSubmit: (values: SupplierFormValues) => Promise<boolean> | Promise<void> | void
   onReset: () => void
 }
 
-export default function SupplierForm({ state, onFieldChange, onSubmit, onReset }: SupplierFormProps) {
+export default function SupplierForm({ state, onSubmit, onReset }: SupplierFormProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierFormSchema),
+    defaultValues: state.form,
+  })
+
+  useEffect(() => {
+    reset(state.form)
+  }, [reset, state.form])
+
   return (
     <form
       className="form"
-      onSubmit={(event) => {
-        event.preventDefault()
-        onSubmit()
-      }}
+      onSubmit={handleSubmit(async (values) => {
+        await onSubmit(values)
+      })}
     >
       <div className="formRow">
-        <FormField label="Nombre">
+        <FormField label="Nombre" error={errors.name?.message}>
           <input
             className="input"
-            value={state.form.name}
-            onChange={(event) => onFieldChange('name', event.target.value)}
             placeholder="Nombre del proveedor"
             disabled={state.saving}
-            required
+            {...register('name')}
           />
         </FormField>
 
-        <FormField label="Email">
+        <FormField label="Email" error={errors.email?.message}>
           <input
             className="input"
-            value={state.form.email}
-            onChange={(event) => onFieldChange('email', event.target.value)}
             placeholder="correo@dominio.com"
             disabled={state.saving}
+            {...register('email')}
           />
         </FormField>
 
-        <FormField label="Teléfono">
+        <FormField label="Teléfono" error={errors.phone?.message}>
           <input
             className="input"
-            value={state.form.phone}
-            onChange={(event) => onFieldChange('phone', event.target.value)}
             placeholder="0000-0000"
             disabled={state.saving}
+            {...register('phone')}
           />
         </FormField>
 
-        <FormField label="Estado" className="actions">
+        <FormField label="Estado" className="actions" hint="Zod valida el formato antes de enviar.">
           <p className="muted">{state.editingId != null ? `Editando #${state.editingId}` : 'Creando nuevo registro'}</p>
         </FormField>
       </div>
@@ -59,16 +71,18 @@ export default function SupplierForm({ state, onFieldChange, onSubmit, onReset }
         <button className="button primary" type="submit" disabled={state.saving}>
           {state.editingId != null ? 'Actualizar' : 'Crear'}
         </button>
-        <button className="button" type="button" onClick={onReset} disabled={state.saving}>
+        <button
+          className="button"
+          type="button"
+          onClick={() => {
+            reset(state.form)
+            onReset()
+          }}
+          disabled={state.saving}
+        >
           Cancelar
         </button>
       </div>
-
-      {state.formError ? (
-        <p className="status error" role="alert">
-          {state.formError}
-        </p>
-      ) : null}
     </form>
   )
 }

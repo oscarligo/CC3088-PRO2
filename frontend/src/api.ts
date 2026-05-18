@@ -1,3 +1,10 @@
+/* 
+API client utilities. These functions wrap the Fetch API and provide  
+error handling and JSON parsing for backend API calls.
+*/
+
+
+
 export type ApiErrorBody = {
   message?: string
 }

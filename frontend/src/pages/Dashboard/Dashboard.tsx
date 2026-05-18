@@ -1,10 +1,9 @@
 import { Link } from 'react-router'
-import PageHeader from '../../components/PageHeader/PageHeader'
 import './Dashboard.css'
 
 const cards = [
-  { title: 'Productos', description: 'CRUD con categorías y proveedores', to: '/products' },
-  { title: 'Proveedores', description: 'Altas, ediciones y eliminaciones', to: '/suppliers' },
+  { title: 'Productos', description: 'CRUD completo para productos', to: '/products' },
+  { title: 'Proveedores', description: 'CRUD completo para proveedores', to: '/suppliers' },
   { title: 'Inventario', description: 'Vista del stock disponible', to: '/inventory' },
   { title: 'Reportes', description: 'Consultas SQL y registro de ventas', to: '/reports' },
 ]
@@ -12,28 +11,18 @@ const cards = [
 export default function Dashboard() {
   return (
     <section className="page dashboardPage pageFrame">
-      <PageHeader
-        eyebrow="Inicio"
-        title="Panel principal"
-        description="La aplicación ya queda separada por rutas y preparada para que la lógica viva en servicios, contexto y hooks."
-      />
 
       <div className="dashboardHero">
         <div>
-          <h1>Arquitectura modular para el frontend</h1>
+          <h1>Aplicación web para gestionar el inventario y las ventas de una tienda. </h1>
           <p className="muted">
-            Cada módulo de negocio se organiza en su propia ruta, con formularios controlados y
-            validación cliente sin llamadas al API dentro de los componentes.
+            La tienda maneja productos agrupados en categorías, comprados a proveedores. Los clientes
+            realizan compras atendidas por empleados. Cada compra puede incluir varios productos y debe
+            quedar registrada junto con el detalle de lo vendido. La tienda necesita controlar el stock 
+            disponible.
           </p>
         </div>
 
-        <div className="dashboardActions">
-          {cards.map((card) => (
-            <Link key={card.to} to={card.to} className="button primary">
-              Ir a {card.title}
-            </Link>
-          ))}
-        </div>
       </div>
 
       <div className="dashboardCardGrid">

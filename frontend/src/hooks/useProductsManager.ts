@@ -9,12 +9,7 @@ import {
   updateProduct,
 } from '../services/productsService'
 import type { Category, Product, Supplier } from '../types/domain'
-import {
-  decimalField,
-  integerField,
-  requiredText,
-  validateWithSchema,
-} from '../utils/validation'
+import type { ProductFormValues } from '../schemas/forms'
 
 export type ProductFormState = {
   name: string
@@ -156,7 +151,6 @@ export function useProductsManager() {
     void load()
 
     return () => controller.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiBaseUrl])
 
   const startCreate = () => {
@@ -190,28 +184,15 @@ export function useProductsManager() {
     })
   }
 
-  const submit = async () => {
+  const submit = async (values: ProductFormValues) => {
     dispatch({ type: 'formError', value: null })
 
-    const formErrors = validateWithSchema(state.form, {
-      name: requiredText('El nombre es obligatorio'),
-      unitPrice: decimalField('El precio debe ser un número mayor o igual a 0', { min: 0 }),
-      stock: integerField('El stock debe ser un entero mayor o igual a 0', { min: 0 }),
-      idCategory: integerField('Selecciona una categoría válida', { min: 1 }),
-      idSupplier: integerField('Selecciona un proveedor válido', { min: 1 }),
-    })
-
-    if (Object.keys(formErrors).length > 0) {
-      dispatch({ type: 'formError', value: Object.values(formErrors)[0] ?? 'Revisa los campos' })
-      return false
-    }
-
     const payload = {
-      name: state.form.name.trim(),
-      unit_price: Number(state.form.unitPrice),
-      stock: Number(state.form.stock),
-      id_category: Number(state.form.idCategory),
-      id_supplier: Number(state.form.idSupplier),
+      name: values.name.trim(),
+      unit_price: Number(values.unitPrice),
+      stock: Number(values.stock),
+      id_category: Number(values.idCategory),
+      id_supplier: Number(values.idSupplier),
     }
 
     dispatch({ type: 'saving', value: true })

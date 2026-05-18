@@ -6,7 +6,7 @@ import SupplierTable from './SupplierTable'
 import './Suppliers.css'
 
 export default function Suppliers() {
-  const { state, setField, startEdit, resetForm, submit, remove } = useSuppliersManager()
+  const { state, startEdit, resetForm, submit, remove } = useSuppliersManager()
 
   return (
     <section className="page suppliersPage pageFrame section">
@@ -27,7 +27,7 @@ export default function Suppliers() {
         <StatusMessage kind="error">Error: {state.error}</StatusMessage>
       ) : null}
 
-      <SupplierForm state={state} onFieldChange={setField} onSubmit={submit} onReset={resetForm} />
+      <SupplierForm state={state} onSubmit={submit} onReset={resetForm} />
 
       {state.loading ? (
         <StatusMessage kind="loading">Cargando proveedores...</StatusMessage>
