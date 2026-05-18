@@ -9,6 +9,10 @@
 
 El proyecto consiste en diseñar y desarrollar una aplicación web para gestionar el inventario y las ventas de una tienda. 
 
+# Proyecto subido en un servidor:
+
+Enlace: <http://35.212.219.176:3000>
+
 ## Contexto del negocio:
 
 La tienda maneja productos agrupados en categorías, comprados a proveedores. Los clientes
