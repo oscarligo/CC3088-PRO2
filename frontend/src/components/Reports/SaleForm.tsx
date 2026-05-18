@@ -2,9 +2,10 @@ import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import FormField from '../FormField/FormField'
+import StatusMessage from '../StatusMessage/StatusMessage'
 import type { Client, Employee, Product } from '../../types/domain'
 import { saleFormSchema, type SaleFormValues } from '../../schemas/forms.ts'
-import '../../pages/Reports/Reports.css'
+import './SaleForm.css'
 
 type SaleFormProps = {
   clients: Client[]
@@ -30,25 +31,29 @@ export default function SaleForm({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors }, 
   } = useForm({
     resolver: zodResolver(saleFormSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
     defaultValues: {
-      idClient: clients[0] ? String(clients[0].id_client) : '',
-      idEmployee: employees[0] ? String(employees[0].id_employee) : '',
-      idProduct: products[0] ? String(products[0].id_product) : '',
-      amount: '1',
-    },
+      idClient: '',
+      idEmployee: '',
+      idProduct: '',
+      amount: 1,
+    }
   })
 
   useEffect(() => {
-    reset({
-      idClient: clients[0] ? String(clients[0].id_client) : '',
-      idEmployee: employees[0] ? String(employees[0].id_employee) : '',
-      idProduct: products[0] ? String(products[0].id_product) : '',
-      amount: '1',
-    } as any)
-  }, [clients, employees, products, reset])
+    if (success) {
+      reset({
+        idClient: '',
+        idEmployee: '',
+        idProduct: '',
+        amount: 1,
+      } as any)
+    }
+  }, [success, reset])
 
   return (
     <section className="reportPanel">
@@ -57,24 +62,19 @@ export default function SaleForm({
         Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.
       </p>
 
-      {success ? <p className="status">{success}</p> : null}
-      {error ? (
-        <p className="status error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {success ? <StatusMessage>{success}</StatusMessage> : null}
+      {error ? <StatusMessage kind="error">{error}</StatusMessage> : null}
 
-      <form
-        className="form"
-        // 3. El handleSubmit entregará 'values' ya transformado (IDs y Amount como números reales)
+      <form 
+        className="form" 
         onSubmit={handleSubmit(async (values) => {
           await onSubmit(values as SaleFormValues)
         })}
       >
         <div className="formRow">
+          
           <FormField label="Cliente" error={errors.idClient?.message}>
             <select className="select" disabled={saving || clients.length === 0} {...register('idClient')}>
-              {/* Opción vacía por si el cliente no es obligatorio */}
               <option value="">Selecciona un cliente (Opcional)</option>
               {clients.map((client) => (
                 <option key={client.id_client} value={client.id_client}>
@@ -86,7 +86,7 @@ export default function SaleForm({
 
           <FormField label="Empleado" error={errors.idEmployee?.message}>
             <select className="select" disabled={saving || employees.length === 0} {...register('idEmployee')}>
-              <option value="">Selecciona un empleado</option>
+              <option value="">Selecciona un empleado...</option>
               {employees.map((employee) => (
                 <option key={employee.id_employee} value={employee.id_employee}>
                   {employee.name} — {employee.role}
@@ -97,7 +97,7 @@ export default function SaleForm({
 
           <FormField label="Producto" error={errors.idProduct?.message}>
             <select className="select" disabled={saving || products.length === 0} {...register('idProduct')}>
-              <option value="">Selecciona un producto</option>
+              <option value="">Selecciona un producto...</option>
               {products.map((product) => (
                 <option key={product.id_product} value={product.id_product}>
                   {product.name} (stock: {product.stock})
@@ -107,7 +107,15 @@ export default function SaleForm({
           </FormField>
 
           <FormField label="Cantidad" error={errors.amount?.message}>
-            <input className="input" inputMode="numeric" disabled={saving} {...register('amount')} />
+            <input 
+              className="input" 
+              type="number"
+              placeholder="Ej. 1"
+              min="1"
+              inputMode="numeric" 
+              disabled={saving} 
+              {...register('amount', { valueAsNumber: true })} 
+            />
           </FormField>
         </div>
 

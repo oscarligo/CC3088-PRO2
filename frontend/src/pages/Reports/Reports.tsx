@@ -1,156 +1,104 @@
-import { useEffect, useMemo, useState } from 'react'
-import PageHeader from '../../components/PageHeader/PageHeader'
-import StatusMessage from '../../components/StatusMessage/StatusMessage'
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useAppConfig } from '../../context/AppConfigContext/useAppConfig'
 import { createSale, getReportData } from '../../services/reportsService'
-import type {
-  CategorySales,
-  Client,
-  CreateSaleResponse,
-  Employee,
-  InventoryProduct,
-  Product,
-  SaleLine,
-  SupplierProductCount,
-  TopClient,
-} from '../../types/domain'
-import type { SaleFormValues } from '../../schemas/forms'
+
+import PageHeader from '../../components/PageHeader/PageHeader'
+import StatusMessage from '../../components/StatusMessage/StatusMessage'
 import ReportSection from '../../components/Reports/ReportSection'
 import SaleForm from '../../components/Reports/SaleForm'
+import type { SaleFormValues } from '../../schemas/forms'
 import './Reports.css'
 
 export default function Reports() {
   const { apiBaseUrl } = useAppConfig()
+  const queryClient = useQueryClient()
 
-  const urls = useMemo(
-    () => ({
-      saleLines: `${apiBaseUrl}/api/reports/sale-lines`,
-      supplierProductCount: `${apiBaseUrl}/api/reports/supplier-product-count?min_products=1`,
-      categorySales: `${apiBaseUrl}/api/reports/category-sales?min_total=0`,
-      unsoldProducts: `${apiBaseUrl}/api/reports/unsold-products`,
-      clientsMinSales: `${apiBaseUrl}/api/reports/clients-min-sales?min_sales=2`,
-      topClients: `${apiBaseUrl}/api/reports/top-clients?limit=10`,
-      sales: `${apiBaseUrl}/api/sales`,
-    }),
-    [apiBaseUrl],
-  )
+  const [
+    reportsQuery    
+  ] = useQueries({
+    queries: [
+      {
+        queryKey: ['reportData', apiBaseUrl],
+        queryFn: ({ signal }) => getReportData(apiBaseUrl, signal),
+      },
+    
+    ]
+  })
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [saleLines, setSaleLines] = useState<SaleLine[]>([])
-  const [supplierCounts, setSupplierCounts] = useState<SupplierProductCount[]>([])
-  const [categorySales, setCategorySales] = useState<CategorySales[]>([])
-  const [unsoldProducts, setUnsoldProducts] = useState<InventoryProduct[]>([])
-  const [clientsMinSales, setClientsMinSales] = useState<Client[]>([])
-  const [topClients, setTopClients] = useState<TopClient[]>([])
-  const [clients, setClients] = useState<Client[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [saleSaving, setSaleSaving] = useState(false)
-  const [saleError, setSaleError] = useState<string | null>(null)
-  const [saleSuccess, setSaleSuccess] = useState<string | null>(null)
+  const { 
+    saleLines = [],
+    supplierProductCount = [],
+    categorySales = [],
+    unsoldProducts = [],
+    topClients = [],
+    clients = [],
+    employees = [],
+    products = []
+  } = reportsQuery.data ?? {}
 
-  const loadAll = async (signal?: AbortSignal) => {
-    const data = await getReportData(apiBaseUrl, signal)
 
-    setSaleLines(data.saleLines)
-    setSupplierCounts(data.supplierProductCount)
-    setCategorySales(data.categorySales)
-    setUnsoldProducts(data.unsoldProducts)
-    setClientsMinSales(data.clientsMinSales)
-    setTopClients(data.topClients)
-    setClients(data.clients)
-    setEmployees(data.employees)
-    setProducts(data.products)
+  const saleMutation = useMutation({
+    mutationFn: async (values: SaleFormValues) => {
+      const idClientNumber = Number(values.idClient)
+      const idClientPayload = Number.isInteger(idClientNumber) && idClientNumber > 0 ? idClientNumber : null
 
-  }
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        await loadAll(controller.signal)
-      } catch (exception) {
-        if (exception instanceof DOMException && exception.name === 'AbortError') return
-        setError(exception instanceof Error ? exception.message : 'Error desconocido')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => controller.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiBaseUrl])
-
-  const reload = async () => {
-    setError(null)
-    setLoading(true)
-
-    try {
-      await loadAll()
-    } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Error desconocido')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const submitSale = async (values: SaleFormValues) => {
-    setSaleError(null)
-    setSaleSuccess(null)
-
-    const idClientNumber = Number(values.idClient)
-    const idEmployeeNumber = Number(values.idEmployee)
-    const idProductNumber = Number(values.idProduct)
-    const amountNumber = Number(values.amount)
-    const idClientPayload = Number.isInteger(idClientNumber) && idClientNumber > 0 ? idClientNumber : null
-
-    setSaleSaving(true)
-
-    try {
-      const response: CreateSaleResponse = await createSale(apiBaseUrl, {
+      const payload = {
         id_client: idClientPayload,
-        id_employee: idEmployeeNumber,
-        items: [{ id_product: idProductNumber, amount: amountNumber }],
-      })
+        id_employee: Number(values.idEmployee),
+        items: [{ 
+          id_product: Number(values.idProduct), 
+          amount: Number(values.amount) 
+        }],
+      }
 
-      setSaleSuccess(`Venta creada con id_sale=${response.id_sale}`)
-      await reload()
-    } catch (exception) {
-      setSaleError(exception instanceof Error ? exception.message : 'Error desconocido')
-    } finally {
-      setSaleSaving(false)
+      return createSale(apiBaseUrl, payload)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reportData', apiBaseUrl] })
     }
-  }
+  })
+
+
+  const globalLoading = reportsQuery.isLoading
+  const globalError = reportsQuery.error ? (reportsQuery.error as Error).message : null
+  const saving = saleMutation.isPending
+
+  const saleError = saleMutation.error ? (saleMutation.error as Error).message : null
+  const saleSuccess = saleMutation.isSuccess 
+    ? `Venta creada con éxito (ID: ${saleMutation.data?.id_sale})` 
+    : null
 
   return (
     <section className="page reportsPage pageFrame section">
       <PageHeader
         eyebrow="Analítica"
         title="Reportes"
-        description="Consultas de SQL y registro de ventas coordinados desde servicios reutilizables."
+        description="Consultas de SQL y registro de ventas."
         actions={
           <div className="buttonRow">
-            <button className="button" type="button" onClick={() => void reload()} disabled={loading}>
+            <button 
+              className="button" 
+              type="button" 
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ['reportData', apiBaseUrl] })
+              }} 
+              disabled={globalLoading}
+            >
               Recargar
             </button>
           </div>
         }
       />
 
-      {loading ? <StatusMessage kind="loading">Cargando reportes...</StatusMessage> : null}
-      {error ? (
-        <StatusMessage kind="error">Error: {error}</StatusMessage>
+      {globalLoading ? <StatusMessage kind="loading">Cargando reportes...</StatusMessage> : null}
+      
+      {globalError ? (
+        <StatusMessage kind="error">Error al cargar reportes: {globalError}</StatusMessage>
       ) : null}
 
       <div className="reportsGrid">
-        <ReportSection title="Detalle de ventas" api={urls.saleLines}>
+        {/* REPORT SECTION 1: DETALLE DE VENTAS */}
+        <ReportSection title="Detalle de ventas" api={`${apiBaseUrl}/api/reports/sale-lines`}>
           {saleLines.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -169,8 +117,8 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {saleLines.map((line, index) => (
-                    <tr key={`${line.id_sale}-${index}`}>
+                  {saleLines.map((line, idx) => (
+                    <tr key={`${line.id_sale}-${idx}`}>
                       <td className="mono">{line.id_sale}</td>
                       <td className="mono">{line.sale_date}</td>
                       <td>{line.client_name ?? '-'}</td>
@@ -187,8 +135,8 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="Productos por proveedor" api={urls.supplierProductCount}>
-          {supplierCounts.length === 0 ? (
+        <ReportSection title="Productos por proveedor" api={`${apiBaseUrl}/api/reports/supplier-product-count?min_products=1`}>
+          {supplierProductCount.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
             <div className="reportTableWrap tableWrap">
@@ -201,7 +149,7 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {supplierCounts.map((row) => (
+                  {supplierProductCount.map((row) => (
                     <tr key={row.id_supplier}>
                       <td>{row.supplier_name}</td>
                       <td className="mono">{row.products_count}</td>
@@ -214,7 +162,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="Ventas por categoría" api={urls.categorySales}>
+        <ReportSection title="Ventas por categoría" api={`${apiBaseUrl}/api/reports/category-sales?min_total=0`}>
           {categorySales.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -243,7 +191,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="Productos sin ventas" api={urls.unsoldProducts}>
+        <ReportSection title="Productos sin ventas" api={`${apiBaseUrl}/api/reports/unsold-products`}>
           {unsoldProducts.length === 0 ? (
             <StatusMessage kind="empty">Sin datos (todos tienen ventas).</StatusMessage>
           ) : (
@@ -274,7 +222,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="Top clientes por gasto" api={urls.topClients}>
+        <ReportSection title="Top clientes por gasto" api={`${apiBaseUrl}/api/reports/top-clients?limit=10`}>
           {topClients.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -308,10 +256,12 @@ export default function Reports() {
         clients={clients}
         employees={employees}
         products={products}
-        saving={saleSaving}
+        saving={saving}
         error={saleError}
         success={saleSuccess}
-        onSubmit={submitSale}
+        onSubmit={async (values) => {
+          await saleMutation.mutateAsync(values)
+        }}
       />
     </section>
   )

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import '../../pages/Reports/Reports.css'
+import './ReportSection.css'
 
 type ReportSectionProps = {
   title: string
@@ -12,7 +12,7 @@ export default function ReportSection({ title, api, children }: ReportSectionPro
     <section className="reportPanel">
       <h3>{title}</h3>
       <p className="muted">
-        API: <code>{api}</code>
+        Endpoint: <code>{api}</code>
       </p>
       {children}
     </section>

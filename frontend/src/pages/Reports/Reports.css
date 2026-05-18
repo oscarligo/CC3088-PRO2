@@ -8,13 +8,6 @@
   }
 }
 
-.reportsPage .reportPanel {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .reportsPage .reportTableWrap {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

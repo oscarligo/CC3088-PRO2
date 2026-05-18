@@ -8,12 +8,14 @@ import type { Supplier } from '../../types/domain'
 import type { SupplierFormValues  } from '../../schemas/forms'
 import './Suppliers.css'
 import PageHeader from '../../components/PageHeader/PageHeader'
+import StatusMessage from '../../components/StatusMessage/StatusMessage'
 
 export default function SuppliersPage() {
   const { apiBaseUrl } = useAppConfig()
   const queryClient = useQueryClient()
   
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
+  const [formNonce, setFormNonce] = useState(0)
 
   const { data: suppliers = [], isLoading, error } = useQuery({
     queryKey: ['suppliers', apiBaseUrl],
@@ -32,9 +34,15 @@ export default function SuppliersPage() {
       }
       return createSupplier(apiBaseUrl, payload)
     },
-    onSuccess: () => {
+    onMutate: () => ({ wasEditing: editingSupplier != null }),
+    onSuccess: (_data, _values, context) => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', apiBaseUrl] })
       setEditingSupplier(null)
+
+      // Si fue un CREATE (no un UPDATE), limpiamos el form
+      if (!context?.wasEditing) {
+        setFormNonce((current) => current + 1)
+      }
     }
   })
 
@@ -50,9 +58,10 @@ export default function SuppliersPage() {
   })
 
   const saving = saveMutation.isPending || deleteMutation.isPending
+  const supplierFormKey = `${editingSupplier?.id_supplier ?? 'new'}-${formNonce}`
 
   return (
-    <div>
+    <section className="page suppliersPage pageFrame section">
       <PageHeader
               eyebrow="Catálogo"
               title="Proveedores"
@@ -62,7 +71,10 @@ export default function SuppliersPage() {
                   <button 
                     className="button primary" 
                     type="button" 
-                    onClick={() => setEditingSupplier(null)} 
+                    onClick={() => {
+                      setEditingSupplier(null)
+                      setFormNonce((current) => current + 1)
+                    }} 
                     disabled={saving}
                   >
                     Nuevo proveedor
@@ -71,28 +83,33 @@ export default function SuppliersPage() {
               }
             />
 
-
-
-
       <SupplierForm 
-        key={editingSupplier?.id_supplier ?? 'new'} 
+        key={supplierFormKey}
         initialValues={editingSupplier} 
         saving={saving}
         onSubmit={async (values) => {
           await saveMutation.mutateAsync(values)
         }}
-        onCancel={() => setEditingSupplier(null)}
+        onCancel={() => {
+          setEditingSupplier(null)
+          setFormNonce((current) => current + 1)
+        }}
       />
 
-      {isLoading ? <p>Cargando...</p> : null}
-      {error ? <p>Error: {(error as Error).message}</p> : null}
-
-      <SupplierTable 
-        suppliers={suppliers} 
-        saving={saving}
-        onEdit={(supplier) => setEditingSupplier(supplier)} 
-        onDelete={(id) => deleteMutation.mutate(id)} 
-      />
-    </div>
+      {isLoading ? (
+        <StatusMessage kind="loading">Cargando proveedores...</StatusMessage>
+      ) : error ? (
+        <StatusMessage kind="error">Error: {(error as Error).message}</StatusMessage>
+      ) : suppliers.length === 0 ? (
+        <StatusMessage kind="empty">No hay proveedores.</StatusMessage>
+      ) : (
+        <SupplierTable 
+          suppliers={suppliers} 
+          saving={saving}
+          onEdit={(supplier) => setEditingSupplier(supplier)} 
+          onDelete={(id) => deleteMutation.mutate(id)} 
+        />
+      )}
+    </section>
   )
 }

@@ -1,10 +1,8 @@
-import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { supplierFormSchema, type SupplierFormValues } from '../../schemas/forms'
 import type { Supplier } from '../../types/domain'
 import FormField from '../FormField/FormField' 
-import '../../pages/Suppliers/Suppliers.css'
 
 type SupplierFormProps = {
   initialValues: Supplier | null 
@@ -14,30 +12,14 @@ type SupplierFormProps = {
 }
 
 export default function SupplierForm({ initialValues, saving, onSubmit, onCancel }: SupplierFormProps) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<SupplierFormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
+      name: initialValues?.name ?? '',
+      email: initialValues?.email ?? '',
+      phone: initialValues?.phone ?? '',
     }
   })
-
-  useEffect(() => {
-    if (initialValues != null) {
-      reset({
-        name: initialValues.name,
-        email: initialValues.email ?? '',
-        phone: initialValues.phone ?? '',
-      }) 
-    } else {
-      reset({
-        name: '',
-        email: '',
-        phone: '',
-      })
-    }
-  }, [initialValues, reset])
 
   const handleFormSubmit = async (values: SupplierFormValues) => {
     await onSubmit(values)

@@ -1,10 +1,8 @@
-import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import FormField from '../../components/FormField/FormField'
 import { productFormSchema, type ProductFormValues } from '../../schemas/forms.ts'
 import type { Category, Supplier, Product } from '../../types/domain'
-import '../../pages/Products/Products.css'
 
 type ProductFormProps = {
   initialValues: Product | null
@@ -23,48 +21,26 @@ export default function ProductForm({
   onSubmit,
   onCancel,
 }: ProductFormProps) {
-
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
-      name: '',
-      unitPrice: '',
-      stock: '',
-      idCategory: '',
-      idSupplier: '',
+      name: initialValues?.name ?? '',
+      unitPrice: initialValues?.unit_price ?? '',
+      stock: initialValues?.stock ?? '',
+      idCategory: initialValues?.id_category ?? '',
+      idSupplier: initialValues?.id_supplier ?? '',
     },
   })
-
-  useEffect(() => {
-  if (initialValues != null) {
-    reset({
-      name: initialValues.name,
-      unitPrice: initialValues.unit_price,
-      stock: initialValues.stock,
-      idCategory: initialValues.id_category,
-      idSupplier: initialValues.id_supplier,
-    } as any)
-  } else {
-    reset({
-      name: '',
-      unitPrice: undefined, 
-      stock: undefined,    
-      idCategory: '',    
-      idSupplier: '',
-    } as any)
-  }
-}, [reset, initialValues])
 
   return (
     <form
       className="form"
       onSubmit={handleSubmit(async (values) => {
-        await onSubmit(values as unknown as ProductFormValues)
+        await onSubmit(values as ProductFormValues)
       })}
     >
       <div className="formRow">
@@ -83,7 +59,9 @@ export default function ProductForm({
             placeholder="0.00"
             inputMode="decimal"
             disabled={saving}
-            {...register('unitPrice')}
+            {...register('unitPrice', {
+              setValueAs: (value) => (value === '' ? value : Number(value)),
+            })}
           />
         </FormField>
 
@@ -93,7 +71,9 @@ export default function ProductForm({
             placeholder="0"
             inputMode="numeric"
             disabled={saving}
-            {...register('stock')}
+            {...register('stock', {
+              setValueAs: (value) => (value === '' ? value : Number(value)),
+            })}
           />
         </FormField>
       </div>
@@ -103,7 +83,9 @@ export default function ProductForm({
           <select
             className="select"
             disabled={saving || categories.length === 0}
-            {...register('idCategory')}
+            {...register('idCategory', {
+              setValueAs: (value) => (value === '' ? value : Number(value)),
+            })}
           >
             <option value="">Selecciona una categoría</option>
             {categories.map((category) => (
@@ -118,7 +100,9 @@ export default function ProductForm({
           <select
             className="select"
             disabled={saving || suppliers.length === 0}
-            {...register('idSupplier')}
+            {...register('idSupplier', {
+              setValueAs: (value) => (value === '' ? value : Number(value)),
+            })}
           >
             <option value="">Selecciona un proveedor</option>
             {suppliers.map((supplier) => (

@@ -1,7 +1,3 @@
-.appMain {
-  padding: 24px;
-}
-
 .page {
   max-width: 1200px;
   margin: 0 auto;
@@ -9,25 +5,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.pageHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 h1,
@@ -53,20 +30,6 @@ h3 {
 .muted {
   margin: 0;
   color: var(--muted);
-}
-
-.status {
-  margin: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-strong);
-}
-
-.status.error {
-  border-color: rgba(180, 35, 24, 0.3);
-  background: rgba(180, 35, 24, 0.08);
 }
 
 .tableWrap,
@@ -140,16 +103,6 @@ h3 {
   }
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field.actions {
-  justify-content: flex-end;
-}
-
 .label {
   font-size: 0.875rem;
   color: var(--muted);
@@ -166,8 +119,7 @@ h3 {
 
 .input:focus,
 .select:focus,
-.button:focus,
-.navLink:focus {
+.button:focus {
   outline: 2px solid rgba(124, 58, 237, 0.35);
   outline-offset: 2px;
 }
@@ -193,7 +145,7 @@ h3 {
 }
 
 .button:hover,
-.navLink:hover {
+.button:hover {
   transform: translateY(-1px);
 }
 
@@ -220,25 +172,6 @@ h3 {
 
 .pageFrame {
   animation: fade-up 220ms ease both;
-}
-
-.themeToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface-strong);
-  color: var(--text-strong);
-  border-radius: 999px;
-  padding: 10px 14px;
-  cursor: pointer;
-}
-
-.themeToggleMark {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--accent);
 }
 
 @keyframes fade-up {

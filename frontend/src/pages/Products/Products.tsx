@@ -23,6 +23,7 @@ export default function Products() {
   const queryClient = useQueryClient()
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [formNonce, setFormNonce] = useState(0)
 
   const { data: products = [], isLoading: loadingProducts, error: errorProducts } = useQuery({
     queryKey: ['products', apiBaseUrl],
@@ -43,10 +44,10 @@ export default function Products() {
     mutationFn: async (values: ProductFormValues) => {
       const payload = {
         name: values.name.trim(),
-        unit_price: values.unitPrice, 
-        stock: values.stock,     
-        id_category: values.idCategory,
-        id_supplier: values.idSupplier,
+        unit_price: Number(values.unitPrice),
+        stock: Number(values.stock),
+        id_category: Number(values.idCategory),
+        id_supplier: Number(values.idSupplier),
       }
 
       if (editingProduct != null) {
@@ -54,17 +55,22 @@ export default function Products() {
       }
       return createProduct(apiBaseUrl, payload)
     },
-    onSuccess: () => {
+    onMutate: () => ({ wasEditing: editingProduct != null }),
+    onSuccess: (_data, _values, context) => {
       queryClient.invalidateQueries({ queryKey: ['products', apiBaseUrl] })
       setEditingProduct(null)
+
+      if (!context?.wasEditing) {
+        setFormNonce((current) => current + 1)
+      }
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteProduct(apiBaseUrl, id),
-    onSuccess: () => {
+    onSuccess: (_data, idDeleted) => {
       queryClient.invalidateQueries({ queryKey: ['products', apiBaseUrl] })
-      if (editingProduct?.id_product === editingProduct?.id_product) {
+      if (editingProduct?.id_product === idDeleted) {
         setEditingProduct(null)
       }
     },
@@ -77,19 +83,23 @@ export default function Products() {
   const globalLoading = loadingProducts || loadingCategories || loadingSuppliers
   const globalError = errorProducts ? (errorProducts as Error).message : null
   const saving = saveMutation.isPending || deleteMutation.isPending
+  const productFormKey = `${editingProduct?.id_product ?? 'new'}-${formNonce}`
 
   return (
     <section className="page productsPage pageFrame section">
       <PageHeader
         eyebrow="Catálogo"
         title="Productos"
-        description="CRUD optimizado mediante estados asíncronos distribuidos con React Query."
+        description="CRUD de productos"
         actions={
           <div className="buttonRow">
             <button 
               className="button primary" 
               type="button" 
-              onClick={() => setEditingProduct(null)} 
+              onClick={() => {
+                setEditingProduct(null)
+                setFormNonce((current) => current + 1)
+              }} 
               disabled={saving}
             >
               Nuevo producto
@@ -107,6 +117,7 @@ export default function Products() {
       ) : null}
 
       <ProductForm
+        key={productFormKey}
         initialValues={editingProduct}
         categories={categories}
         suppliers={suppliers}
@@ -114,7 +125,10 @@ export default function Products() {
         onSubmit={async (values) => {
           await saveMutation.mutateAsync(values)
         }}
-        onCancel={() => setEditingProduct(null)}
+        onCancel={() => {
+          setEditingProduct(null)
+          setFormNonce((current) => current + 1)
+        }}
       />
 
       {globalLoading ? (
