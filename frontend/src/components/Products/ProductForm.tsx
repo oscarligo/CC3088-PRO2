@@ -1,37 +1,70 @@
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import type { ProductManagerState } from '../../hooks/useProductsManager'
 import FormField from '../../components/FormField/FormField'
-import { productFormSchema, type ProductFormValues } from '../../schemas/forms'
-import './Products.css'
+import { productFormSchema, type ProductFormValues } from '../../schemas/forms.ts'
+import type { Category, Supplier, Product } from '../../types/domain'
+import '../../pages/Products/Products.css'
 
 type ProductFormProps = {
-  state: ProductManagerState
+  initialValues: Product | null
+  categories: Category[]
+  suppliers: Supplier[]
+  saving: boolean
   onSubmit: (values: ProductFormValues) => Promise<boolean> | Promise<void> | void
-  onReset: () => void
+  onCancel: () => void
 }
 
-export default function ProductForm({ state, onSubmit, onReset }: ProductFormProps) {
+export default function ProductForm({
+  initialValues,
+  categories,
+  suppliers,
+  saving,
+  onSubmit,
+  onCancel,
+}: ProductFormProps) {
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ProductFormValues>({
+  } = useForm({
     resolver: zodResolver(productFormSchema),
-    defaultValues: state.form,
+    defaultValues: {
+      name: '',
+      unitPrice: '',
+      stock: '',
+      idCategory: '',
+      idSupplier: '',
+    },
   })
 
   useEffect(() => {
-    reset(state.form)
-  }, [reset, state.form])
+  if (initialValues != null) {
+    reset({
+      name: initialValues.name,
+      unitPrice: initialValues.unit_price,
+      stock: initialValues.stock,
+      idCategory: initialValues.id_category,
+      idSupplier: initialValues.id_supplier,
+    } as any)
+  } else {
+    reset({
+      name: '',
+      unitPrice: undefined, 
+      stock: undefined,    
+      idCategory: '',    
+      idSupplier: '',
+    } as any)
+  }
+}, [reset, initialValues])
 
   return (
     <form
       className="form"
       onSubmit={handleSubmit(async (values) => {
-        await onSubmit(values)
+        await onSubmit(values as unknown as ProductFormValues)
       })}
     >
       <div className="formRow">
@@ -39,7 +72,7 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
           <input
             className="input"
             placeholder="Nombre del producto"
-            disabled={state.saving}
+            disabled={saving}
             {...register('name')}
           />
         </FormField>
@@ -49,7 +82,7 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
             className="input"
             placeholder="0.00"
             inputMode="decimal"
-            disabled={state.saving}
+            disabled={saving}
             {...register('unitPrice')}
           />
         </FormField>
@@ -59,13 +92,9 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
             className="input"
             placeholder="0"
             inputMode="numeric"
-            disabled={state.saving}
+            disabled={saving}
             {...register('stock')}
           />
-        </FormField>
-
-        <FormField label="Estado" className="actions" hint="El formulario valida con Zod antes de enviar.">
-          <p className="muted">{state.editingId != null ? `Editando #${state.editingId}` : 'Creando nuevo registro'}</p>
         </FormField>
       </div>
 
@@ -73,10 +102,11 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
         <FormField label="Categoría" error={errors.idCategory?.message}>
           <select
             className="select"
-            disabled={state.saving || state.categories.length === 0}
+            disabled={saving || categories.length === 0}
             {...register('idCategory')}
           >
-            {state.categories.map((category) => (
+            <option value="">Selecciona una categoría</option>
+            {categories.map((category) => (
               <option key={category.id_category} value={category.id_category}>
                 {category.name}
               </option>
@@ -87,10 +117,11 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
         <FormField label="Proveedor" error={errors.idSupplier?.message}>
           <select
             className="select"
-            disabled={state.saving || state.suppliers.length === 0}
+            disabled={saving || suppliers.length === 0}
             {...register('idSupplier')}
           >
-            {state.suppliers.map((supplier) => (
+            <option value="">Selecciona un proveedor</option>
+            {suppliers.map((supplier) => (
               <option key={supplier.id_supplier} value={supplier.id_supplier}>
                 {supplier.name}
               </option>
@@ -100,17 +131,14 @@ export default function ProductForm({ state, onSubmit, onReset }: ProductFormPro
 
         <FormField label="Acciones" className="actions">
           <div className="buttonRow">
-            <button className="button primary" type="submit" disabled={state.saving}>
-              {state.editingId != null ? 'Actualizar' : 'Crear'}
+            <button className="button primary" type="submit" disabled={saving}>
+              {initialValues != null ? 'Actualizar' : 'Crear'}
             </button>
             <button
               className="button"
               type="button"
-              onClick={() => {
-                reset(state.form)
-                onReset()
-              }}
-              disabled={state.saving}
+              onClick={onCancel}
+              disabled={saving}
             >
               Cancelar
             </button>

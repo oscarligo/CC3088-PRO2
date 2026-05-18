@@ -15,8 +15,8 @@ import type {
   TopClient,
 } from '../../types/domain'
 import type { SaleFormValues } from '../../schemas/forms'
-import ReportSection from './ReportSection'
-import SaleForm from './SaleForm'
+import ReportSection from '../../components/Reports/ReportSection'
+import SaleForm from '../../components/Reports/SaleForm'
 import './Reports.css'
 
 export default function Reports() {
@@ -150,7 +150,7 @@ export default function Reports() {
       ) : null}
 
       <div className="reportsGrid">
-        <ReportSection title="JOIN: Detalle de ventas" api={urls.saleLines}>
+        <ReportSection title="Detalle de ventas" api={urls.saleLines}>
           {saleLines.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -187,7 +187,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="JOIN + GROUP BY: Productos por proveedor" api={urls.supplierProductCount}>
+        <ReportSection title="Productos por proveedor" api={urls.supplierProductCount}>
           {supplierCounts.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -214,7 +214,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="GROUP BY: Ventas por categoría" api={urls.categorySales}>
+        <ReportSection title="Ventas por categoría" api={urls.categorySales}>
           {categorySales.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (
@@ -243,7 +243,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="SUBQUERY: Productos sin ventas" api={urls.unsoldProducts}>
+        <ReportSection title="Productos sin ventas" api={urls.unsoldProducts}>
           {unsoldProducts.length === 0 ? (
             <StatusMessage kind="empty">Sin datos (todos tienen ventas).</StatusMessage>
           ) : (
@@ -274,36 +274,7 @@ export default function Reports() {
           )}
         </ReportSection>
 
-        <ReportSection title="SUBQUERY: Clientes con al menos 2 ventas" api={urls.clientsMinSales}>
-          {clientsMinSales.length === 0 ? (
-            <StatusMessage kind="empty">Sin datos.</StatusMessage>
-          ) : (
-            <div className="reportTableWrap tableWrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>NIT</th>
-                    <th>Email</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clientsMinSales.map((client) => (
-                    <tr key={client.id_client}>
-                      <td className="mono">{client.id_client}</td>
-                      <td>{client.name}</td>
-                      <td className="mono">{client.nit ?? '-'}</td>
-                      <td className="mono">{client.email ?? '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </ReportSection>
-
-        <ReportSection title="CTE: Top clientes por gasto" api={urls.topClients}>
+        <ReportSection title="Top clientes por gasto" api={urls.topClients}>
           {topClients.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
           ) : (

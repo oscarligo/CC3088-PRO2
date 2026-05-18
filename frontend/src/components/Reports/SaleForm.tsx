@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import FormField from '../../components/FormField/FormField'
+import FormField from '../FormField/FormField'
 import type { Client, Employee, Product } from '../../types/domain'
-import { saleFormSchema, type SaleFormValues } from '../../schemas/forms'
-import './Reports.css'
+import { saleFormSchema, type SaleFormValues } from '../../schemas/forms.ts'
+import '../../pages/Reports/Reports.css'
 
 type SaleFormProps = {
   clients: Client[]
@@ -25,12 +25,13 @@ export default function SaleForm({
   success,
   onSubmit,
 }: SaleFormProps) {
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<SaleFormValues>({
+  } = useForm({
     resolver: zodResolver(saleFormSchema),
     defaultValues: {
       idClient: clients[0] ? String(clients[0].id_client) : '',
@@ -46,7 +47,7 @@ export default function SaleForm({
       idEmployee: employees[0] ? String(employees[0].id_employee) : '',
       idProduct: products[0] ? String(products[0].id_product) : '',
       amount: '1',
-    })
+    } as any)
   }, [clients, employees, products, reset])
 
   return (
@@ -65,13 +66,16 @@ export default function SaleForm({
 
       <form
         className="form"
+        // 3. El handleSubmit entregará 'values' ya transformado (IDs y Amount como números reales)
         onSubmit={handleSubmit(async (values) => {
-          await onSubmit(values)
+          await onSubmit(values as SaleFormValues)
         })}
       >
         <div className="formRow">
           <FormField label="Cliente" error={errors.idClient?.message}>
             <select className="select" disabled={saving || clients.length === 0} {...register('idClient')}>
+              {/* Opción vacía por si el cliente no es obligatorio */}
+              <option value="">Selecciona un cliente (Opcional)</option>
               {clients.map((client) => (
                 <option key={client.id_client} value={client.id_client}>
                   {client.name}
@@ -82,6 +86,7 @@ export default function SaleForm({
 
           <FormField label="Empleado" error={errors.idEmployee?.message}>
             <select className="select" disabled={saving || employees.length === 0} {...register('idEmployee')}>
+              <option value="">Selecciona un empleado</option>
               {employees.map((employee) => (
                 <option key={employee.id_employee} value={employee.id_employee}>
                   {employee.name} — {employee.role}
@@ -92,6 +97,7 @@ export default function SaleForm({
 
           <FormField label="Producto" error={errors.idProduct?.message}>
             <select className="select" disabled={saving || products.length === 0} {...register('idProduct')}>
+              <option value="">Selecciona un producto</option>
               {products.map((product) => (
                 <option key={product.id_product} value={product.id_product}>
                   {product.name} (stock: {product.stock})

@@ -1,3 +1,7 @@
+// ============================================================================
+// 1. CRUD TABLES
+// ============================================================================
+
 export type Category = {
   id_category: number
   name: string
@@ -11,6 +15,19 @@ export type Supplier = {
   phone: string | null
 }
 
+export type Client = {
+  id_client: number
+  name: string
+  nit: string | null
+  email: string | null
+}
+
+export type Employee = {
+  id_employee: number
+  name: string
+  role: string
+}
+
 export type Product = {
   id_product: number
   name: string
@@ -19,6 +36,10 @@ export type Product = {
   id_category: number
   id_supplier: number
 }
+
+// ============================================================================
+// 2. FORMS Values
+// ============================================================================
 
 export type InventoryProduct = {
   id_product: number
@@ -40,6 +61,10 @@ export type SaleLine = {
   line_total: number
 }
 
+// ============================================================================
+// 3. REPORTS
+// ============================================================================
+
 export type SupplierProductCount = {
   id_supplier: number
   supplier_name: string
@@ -55,13 +80,6 @@ export type CategorySales = {
   total_revenue: number
 }
 
-export type Client = {
-  id_client: number
-  name: string
-  nit: string | null
-  email: string | null
-}
-
 export type TopClient = {
   id_client: number
   client_name: string
@@ -69,11 +87,9 @@ export type TopClient = {
   sales_count: number
 }
 
-export type Employee = {
-  id_employee: number
-  name: string
-  role: string
-}
+// ============================================================================
+// 4. Reponses
+// ============================================================================
 
 export type CreateSaleResponse = {
   id_sale: number

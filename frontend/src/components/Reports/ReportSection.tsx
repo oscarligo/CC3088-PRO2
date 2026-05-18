@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import './Reports.css'
+import '../../pages/Reports/Reports.css'
 
 type ReportSectionProps = {
   title: string

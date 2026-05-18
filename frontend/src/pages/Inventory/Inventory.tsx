@@ -37,7 +37,7 @@ export default function Inventory() {
 
   return (
     <section className="page inventoryPage pageFrame section">
-      <PageHeader eyebrow="Vista" title="Inventario" description="Listado basado en el view del backend, obtenido desde un servicio dedicado." />
+      <PageHeader eyebrow="Vista" title="Inventario" description="Listado basado en el view del backend." />
 
       {loading ? (
         <StatusMessage kind="loading">Cargando productos...</StatusMessage>
