@@ -40,7 +40,7 @@ export default function SupplierForm({ initialValues, saving, onSubmit, onCancel
         <FormField label="Email" error={errors.email?.message}>
           <input
             className="input"
-            placeholder="Correo electrónico (opcional)"
+            placeholder="Correo electrónico"
             disabled={saving}
             {...register('email')}
           />
@@ -49,7 +49,7 @@ export default function SupplierForm({ initialValues, saving, onSubmit, onCancel
         <FormField label="Teléfono" error={errors.phone?.message}>
           <input
             className="input"
-            placeholder="Número de teléfono (opcional)"
+            placeholder="Número de teléfono"
             disabled={saving}
             {...register('phone')}
           />

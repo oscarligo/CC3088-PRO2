@@ -66,7 +66,7 @@ export default function SaleForm({
           
           <FormField label="Cliente" error={errors.idClient?.message}>
             <select className="select" disabled={saving || clients.length === 0} {...register('idClient')}>
-              <option value="">Selecciona un cliente (Opcional)</option>
+              <option value="">Selecciona un cliente...</option>
               {clients.map((client) => (
                 <option key={client.id_client} value={client.id_client}>
                   {client.name}

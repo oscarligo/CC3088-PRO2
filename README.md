@@ -35,18 +35,149 @@ docker compose up --build
 - Backend API: http://localhost:8080 (por defecto)
 
 
-## Requisitos del proyecto (dónde se ve en la UI)
+## Estructura del Proyecto (Frontend)
 
-- CRUD de 2 entidades:
-	- Productos: pestaña **Productos (CRUD)** (tabla `product`).
-	- Proveedores: pestaña **Proveedores (CRUD)** (tabla `supplier`).
+```
+src/
+├── components/  # Componentes visuales reutilizables.
+├── config/      # Configuraciones y constantes globales de la aplicación.
+├── context/     # Manejo del estado global.
+├── pages/       # Componentes contenedores de nivel de ruta.
+├── schemas/     # Validaciones estrictas de Zod.
+├── services/    # Llamadas HTTP directas a los endpoints del servidor.
+├── types/       # Contratos y tipados estrictos de TypeScript.
+├── utils/       # Funciones utilitarias auxiliares.
+│
+├── api.ts       # Cliente HTTP centralizado.
+├── App.tsx      # Orquestador principal.
+└── main.tsx     # Entrypoint
+```
 
-- VIEW usado por el backend:
-	- El inventario usa el VIEW `vw_inventory` y se muestra en **Inventario (VIEW)**.
+## Documentación de Endpoints
 
-- Consultas visibles en la UI (ejecutadas desde la app web):
-	- JOIN multi-tabla: **Detalle de ventas**, **Productos por proveedor**, **Ventas por categoría** (pestaña **Reportes SQL**).
-	- SUBQUERY: **Productos sin ventas (NOT EXISTS)** y **Clientes con al menos 2 ventas (IN)** (pestaña **Reportes SQL**).
-	- GROUP BY + HAVING + agregación: **Productos por proveedor** y **Ventas por categoría** (pestaña **Reportes SQL**).
-	- CTE (WITH): **Top clientes por gasto** (pestaña **Reportes SQL**).
-	- Transacción explícita con ROLLBACK: **Registrar venta** (pestaña **Reportes SQL**). Si se ingresa una cantidad mayor al stock, el backend responde error y hace rollback.
+
+Base URL: `http://localhost:8080:/api` (si se dejan valores por defecto)
+
+
+## Productos (Products)
+- GET /api/products
+  - Descripción: lista productos simples.
+  - Respuesta 200: arreglo de `Product`.
+
+- GET /api/products/inventory
+  - Descripción: vista de inventario con nombre de categoría y proveedor.
+  - Respuesta 200: arreglo de `InventoryProduct`.
+
+- GET /api/products/{id}
+  - Descripción: obtiene un producto por `id`.
+  - Respuesta 200: `Product`.
+  - Errores: 404 si no existe.
+
+- POST /api/products
+  - Descripción: crear producto.
+  - Content-Type: `application/json`
+  - Body JSON (CreateProductRequest):
+    ```json
+    {
+      "name": "Producto",
+      "unit_price": 12.5,
+      "stock": 10,
+      "id_category": 2,
+      "id_supplier": 3
+    }
+    ```
+  - Respuesta 201: objeto `Product` creado.
+  - Errores: 400 para validación (nombre vacío, valores numéricos inválidos).
+
+- PUT /api/products/{id}
+  - Descripción: actualizar producto (mismo shape que CreateProductRequest via `UpdateProductRequest`).
+  - Respuesta 200: objeto `Product` actualizado.
+  - Errores: 404 si no existe, 400 si payload inválido.
+
+- DELETE /api/products/{id}
+  - Descripción: eliminar producto.
+  - Respuesta 204 No Content en éxito.
+  - Errores: 404 si no existe.
+
+## Proveedores (Suppliers)
+- GET /api/suppliers
+  - Respuesta 200: arreglo de `Supplier`.
+
+- GET /api/suppliers/{id}
+  - Respuesta 200: `Supplier` o 404.
+
+- POST /api/suppliers
+  - Body JSON (CreateSupplierRequest):
+    ```json
+    {
+      "name": "Proveedor SA",
+      "email": "proveedor@example.com", 
+      "phone": "1234 5678" 
+    }
+    ```
+  - Respuesta 201: proveedor creado.
+
+- PUT /api/suppliers/{id}
+  - Actualiza proveedor; respuesta 200 con entidad actualizada.
+
+- DELETE /api/suppliers/{id}
+  - Respuesta 204 en éxito.
+  - Errores: 409 Conflict si el proveedor tiene productos asociados; 404 si no existe.
+
+## Categorías
+- GET /api/categories
+  - Respuesta 200: arreglo de categorías.
+
+## Clientes
+- GET /api/clients
+  - Respuesta 200: arreglo de clientes.
+
+## Empleados
+- GET /api/employees
+  - Respuesta 200: arreglo de empleados.
+
+## Reportes
+- GET /api/reports/sale-lines
+  - Respuesta 200: listado de líneas de venta (detalle por venta).
+
+- GET /api/reports/supplier-product-count?min_products=1
+  - Query param: `min_products` (opcional, integer, >=0)
+  - Respuesta 200: conteo de productos por proveedor.
+
+- GET /api/reports/category-sales?min_total=0
+  - Query param: `min_total` (opcional, number, >=0)
+  - Respuesta 200: ventas agregadas por categoría.
+
+- GET /api/reports/unsold-products
+  - Respuesta 200: productos sin ventas.
+
+- GET /api/reports/clients-min-sales?min_sales=2
+  - Query param: `min_sales` (opcional, integer, >0)
+  - Respuesta 200: clientes con al menos `min_sales` ventas.
+
+- GET /api/reports/top-clients?limit=10
+  - Query param: `limit` (opcional, integer 1..100)
+  - Respuesta 200: top clientes.
+
+## Ventas (Sales)
+- POST /api/sales
+  - Descripción: registra una venta.
+  - Body JSON (CreateSaleRequest):
+    ```json
+    {
+      "id_client": 5,           
+      "id_employee": 2,        
+      "items": [
+        { "id_product": 12, "amount": 2 }
+      ]
+    }
+    ```
+  - Respuesta 201: `{ "id_sale": 123 }`.
+  - Errores: 400 si `id_employee` inválido o si hay violaciones de inventario (el backend hace ROLLBACK y retorna error con mensaje)
+
+## Formato de error
+Todos los errores devuelven JSON con shape:
+```json
+{ "message": "Texto de error" }
+```
+
