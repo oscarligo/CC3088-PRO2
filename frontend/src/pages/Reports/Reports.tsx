@@ -74,20 +74,18 @@ export default function Reports() {
         eyebrow="Analítica"
         title="Reportes"
         description="Consultas de SQL y registro de ventas."
-        actions={
-          <div className="buttonRow">
-            <button 
-              className="button" 
-              type="button" 
-              onClick={() => {
-                void queryClient.invalidateQueries({ queryKey: ['reportData', apiBaseUrl] })
-              }} 
-              disabled={globalLoading}
-            >
-              Recargar
-            </button>
-          </div>
-        }
+      />
+
+      <SaleForm
+        clients={clients}
+        employees={employees}
+        products={products}
+        saving={saving}
+        error={saleError}
+        success={saleSuccess}
+        onSubmit={async (values) => {
+          await saleMutation.mutateAsync(values)
+        }}
       />
 
       {globalLoading ? <StatusMessage kind="loading">Cargando reportes...</StatusMessage> : null}
@@ -97,7 +95,6 @@ export default function Reports() {
       ) : null}
 
       <div className="reportsGrid">
-        {/* REPORT SECTION 1: DETALLE DE VENTAS */}
         <ReportSection title="Detalle de ventas" api={`${apiBaseUrl}/api/reports/sale-lines`}>
           {saleLines.length === 0 ? (
             <StatusMessage kind="empty">Sin datos.</StatusMessage>
@@ -251,18 +248,6 @@ export default function Reports() {
           )}
         </ReportSection>
       </div>
-
-      <SaleForm
-        clients={clients}
-        employees={employees}
-        products={products}
-        saving={saving}
-        error={saleError}
-        success={saleSuccess}
-        onSubmit={async (values) => {
-          await saleMutation.mutateAsync(values)
-        }}
-      />
     </section>
   )
 }

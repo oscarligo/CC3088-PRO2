@@ -46,22 +46,13 @@ export default function SaleForm({
 
   useEffect(() => {
     if (success) {
-      reset({
-        idClient: '',
-        idEmployee: '',
-        idProduct: '',
-        amount: 1,
-      } as any)
+      reset()
     }
   }, [success, reset])
 
   return (
     <section className="reportPanel">
-      <h3>Transacción: Registrar venta</h3>
-      <p className="muted">
-        Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.
-      </p>
-
+      <h3>Registrar venta</h3>
       {success ? <StatusMessage>{success}</StatusMessage> : null}
       {error ? <StatusMessage kind="error">{error}</StatusMessage> : null}
 
