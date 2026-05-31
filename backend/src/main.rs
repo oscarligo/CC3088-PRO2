@@ -4,6 +4,10 @@ use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use std::env;
 
+pub mod models;  
+pub mod handlers; 
+pub mod repository;
+
 
 
 #[actix_web::main]
