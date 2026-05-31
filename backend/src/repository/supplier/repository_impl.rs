@@ -1,83 +1,49 @@
-use sqlx::PgPool;
+use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, DeleteResult};
+use sea_orm::DbErr;
+use super::repository::SupplierRepository;
+use crate::models::supplier::{Entity as SupplierEntity, Model as SupplierModel};
 
-use crate::models::supplier::{CreateSupplierRequest, Supplier, UpdateSupplierRequest};
-
-pub async fn list_suppliers(pool: &PgPool) -> Result<Vec<Supplier>, sqlx::Error> {
-    sqlx::query_as::<_, Supplier>(
-        r#"
-        SELECT id_supplier, name, email, phone
-        FROM supplier
-        ORDER BY id_supplier
-        "#,
-    )
-    .fetch_all(pool)
-    .await
+pub struct SupplierRepositoryImpl {
+    pub db: DatabaseConnection,
 }
 
-pub async fn get_supplier(pool: &PgPool, id_supplier: i32) -> Result<Option<Supplier>, sqlx::Error> {
-    sqlx::query_as::<_, Supplier>(
-        r#"
-        SELECT id_supplier, name, email, phone
-        FROM supplier
-        WHERE id_supplier = $1
-        "#,
-    )
-    .bind(id_supplier)
-    .fetch_optional(pool)
-    .await
+impl SupplierRepositoryImpl {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
 }
 
-pub async fn create_supplier(
-    pool: &PgPool,
-    payload: &CreateSupplierRequest,
-) -> Result<Supplier, sqlx::Error> {
-    sqlx::query_as::<_, Supplier>(
-        r#"
-        INSERT INTO supplier (name, email, phone)
-        VALUES ($1, $2, $3)
-        RETURNING id_supplier, name, email, phone
-        "#,
-    )
-    .bind(&payload.name)
-    .bind(&payload.email)
-    .bind(&payload.phone)
-    .fetch_one(pool)
-    .await
-}
+impl SupplierRepository for SupplierRepositoryImpl {
+    
+    async fn create_supplier(&self, supplier_data: SupplierModel) -> Result<SupplierModel, DbErr> {
+        let mut active_model = supplier_data.into_active_model();
+        active_model.id_supplier = Set(0); 
+        active_model.insert(&self.db).await
+    }
 
-pub async fn update_supplier(
-    pool: &PgPool,
-    id_supplier: i32,
-    payload: &UpdateSupplierRequest,
-) -> Result<Option<Supplier>, sqlx::Error> {
-    sqlx::query_as::<_, Supplier>(
-        r#"
-        UPDATE supplier
-        SET name = $1,
-            email = $2,
-            phone = $3
-        WHERE id_supplier = $4
-        RETURNING id_supplier, name, email, phone
-        "#,
-    )
-    .bind(&payload.name)
-    .bind(&payload.email)
-    .bind(&payload.phone)
-    .bind(id_supplier)
-    .fetch_optional(pool)
-    .await
-}
+    async fn list_suppliers(&self) -> Result<Vec<SupplierModel>, DbErr> {
+        SupplierEntity::find().all(&self.db).await
+    }
 
-pub async fn delete_supplier(pool: &PgPool, id_supplier: i32) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query(
-        r#"
-        DELETE FROM supplier
-        WHERE id_supplier = $1
-        "#,
-    )
-    .bind(id_supplier)
-    .execute(pool)
-    .await?;
+    async fn get_supplier(&self, id: i32) -> Result<Option<SupplierModel>, DbErr> {
+        SupplierEntity::find_by_id(id).one(&self.db).await
+    }
 
-    Ok(result.rows_affected())
+    async fn update_supplier(&self, id: i32, supplier_data: SupplierModel) -> Result<SupplierModel, DbErr> {
+        let mut active_model = supplier_data.into_active_model();
+        
+        active_model.id_supplier = Set(id);
+
+        active_model.update(&self.db).await
+    }
+
+    async fn delete_supplier(&self, id: i32) -> Result<(), DbErr> {
+        let result: DeleteResult = SupplierEntity::delete_by_id(id).exec(&self.db).await?;
+        
+        if result.rows_affected == 0 {
+            return Err(DbErr::RecordNotFound("Supplier not found".to_owned()));
+        }
+        
+        Ok(())
+    }
 }

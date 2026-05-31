@@ -1,15 +1,23 @@
-use sqlx::PgPool;
+use sea_orm::{DatabaseConnection, EntityTrait, DbErr};
+use super::repository::ClientRepository;
+use crate::models::client::{Entity as ClientEntity, Model as ClientModel};
 
-use crate::models::client::Client;
+pub struct ClientRepositoryImpl {
+    pub db: DatabaseConnection,
+}
 
-pub async fn list_clients(pool: &PgPool) -> Result<Vec<Client>, sqlx::Error> {
-    sqlx::query_as::<_, Client>(
-        r#"
-        SELECT id_client, name, nit, email
-        FROM client
-        ORDER BY id_client
-        "#,
-    )
-    .fetch_all(pool)
-    .await
+// Constructor for inyecting the database connection into the repository implementation
+impl ClientRepositoryImpl {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
+}
+
+impl ClientRepository for ClientRepositoryImpl {
+    
+    async fn get_client(&self, id: i32) -> Result<Option<ClientModel>, DbErr> {
+        ClientEntity::find_by_id(id)
+            .one(&self.db)
+            .await
+    }
 }

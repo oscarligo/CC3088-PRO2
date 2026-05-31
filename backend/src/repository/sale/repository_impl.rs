@@ -1,101 +1,87 @@
-use sqlx::{FromRow, PgPool};
+use sea_orm::{
+    DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, 
+    Set, TransactionTrait, DbErr, DeleteResult, ColumnTrait, QueryFilter
+};
 
-use crate::error::{map_sqlx_error, ApiError};
-use crate::models::sale::CreateSaleRequest;
+use super::repository::SaleRepository;
+use crate::models::sale::{Entity as SaleEntity, Model as SaleModel};
+use crate::models::sale_details::{Entity as DetailEntity, Model as SaleDetailModel};
 
-#[derive(Debug, FromRow)]
-struct ProductStockPrice {
-    stock: i32,
-    unit_price: f64,
+pub struct SaleRepositoryImpl {
+    pub db: DatabaseConnection,
 }
 
-pub async fn create_sale(pool: &PgPool, payload: &CreateSaleRequest) -> Result<i32, ApiError> {
-    if payload.items.is_empty() {
-        return Err(ApiError::bad_request("La venta debe incluir al menos 1 producto"));
+impl SaleRepositoryImpl {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
+}
+
+impl SaleRepository for SaleRepositoryImpl {
+    
+    async fn create_sale(
+        &self, 
+        sale_data: SaleModel, 
+        details: Vec<SaleDetailModel>
+    ) -> Result<(SaleModel, Vec<SaleDetailModel>), DbErr> {
+        
+        let txn = self.db.begin().await?;
+
+        let mut sale_active = sale_data.into_active_model();
+        sale_active.id_sale = Set(0); // Forzar autoincrementable
+        
+        let saved_sale = sale_active.insert(&txn).await?;
+        let generated_sale_id = saved_sale.id_sale;
+
+        let mut saved_details = Vec::new();
+        for detail in details {
+            let mut detail_active = detail.into_active_model();
+            detail_active.id_sale_detail = Set(0);
+            detail_active.id_sale = Set(generated_sale_id); // Inyectamos el ID padre
+
+            let saved_detail = detail_active.insert(&txn).await?;
+            saved_details.push(saved_detail);
+        }
+
+        txn.commit().await?;
+
+        Ok((saved_sale, saved_details))
     }
 
-    for item in &payload.items {
-        if item.amount <= 0 {
-            return Err(ApiError::bad_request("La cantidad debe ser mayor a 0"));
-        }
+    async fn list_sales(&self) -> Result<Vec<(SaleModel, Vec<SaleDetailModel>)>, DbErr> {
+        // SeaORM jala la venta junto con sus detalles mapeados gracias a la relación has_many
+        SaleEntity::find()
+            .find_with_related(DetailEntity)
+            .all(&self.db)
+            .await
     }
 
-    let mut tx = pool.begin().await.map_err(map_sqlx_error)?;
-
-    let id_sale: i32 = match sqlx::query_scalar(
-        r#"
-        INSERT INTO sale (id_client, id_employee)
-        VALUES ($1, $2)
-        RETURNING id_sale
-        "#,
-    )
-    .bind(payload.id_client)
-    .bind(payload.id_employee)
-    .fetch_one(&mut *tx)
-    .await
-    {
-        Ok(id_sale) => id_sale,
-        Err(e) => {
-            let _ = tx.rollback().await;
-            return Err(map_sqlx_error(e));
-        }
-    };
-
-    for item in &payload.items {
-        let product: Option<ProductStockPrice> = match sqlx::query_as::<_, ProductStockPrice>(
-            r#"
-            SELECT stock, unit_price::float8 AS unit_price
-            FROM product
-            WHERE id_product = $1
-            FOR UPDATE
-            "#,
-        )
-        .bind(item.id_product)
-        .fetch_optional(&mut *tx)
-        .await
-        {
-            Ok(product) => product,
-            Err(e) => {
-                let _ = tx.rollback().await;
-                return Err(map_sqlx_error(e));
-            }
-        };
-
-        let Some(product) = product else {
-            let _ = tx.rollback().await;
-            return Err(ApiError::bad_request(format!(
-                "Producto no existe: {}",
-                item.id_product
-            )));
-        };
-
-        if product.stock < item.amount {
-            let _ = tx.rollback().await;
-            return Err(ApiError::bad_request(format!(
-                "Stock insuficiente para el producto {} (stock={}, solicitado={})",
-                item.id_product, product.stock, item.amount
-            )));
-        }
-
-        if let Err(e) = sqlx::query(
-            r#"
-            INSERT INTO sale_details (id_sale, id_product, amount, sale_price)
-            VALUES ($1, $2, $3, $4::numeric)
-            "#,
-        )
-        .bind(id_sale)
-        .bind(item.id_product)
-        .bind(item.amount)
-        .bind(product.unit_price)
-        .execute(&mut *tx)
-        .await
-        {
-            let _ = tx.rollback().await;
-            return Err(map_sqlx_error(e));
-        }
+    async fn get_sale(&self, id: i32) -> Result<Option<(SaleModel, Vec<SaleDetailModel>)>, DbErr> {
+        let rows = SaleEntity::find_by_id(id)
+            .find_with_related(DetailEntity)
+            .all(&self.db)
+            .await?;
+        Ok(rows.into_iter().next())
     }
 
-    tx.commit().await.map_err(map_sqlx_error)?;
+    async fn update_sale(&self, id: i32, sale_data: SaleModel) -> Result<SaleModel, DbErr> {
+        let mut active_model = sale_data.into_active_model();
+        active_model.id_sale = Set(id);
+        
+        active_model.update(&self.db).await
+    }
 
-    Ok(id_sale)
+    async fn delete_sale(&self, id: i32) -> Result<(), DbErr> {
+        let txn = self.db.begin().await?; 
+        DetailEntity::delete_many()
+            .filter(crate::models::sale_details::Column::IdSale.eq(id))
+            .exec(&txn)
+            .await?;
+        let result: DeleteResult = SaleEntity::delete_by_id(id).exec(&txn).await?;        
+        if result.rows_affected == 0 {
+            return Err(DbErr::RecordNotFound("Sale not found".to_owned()));
+        }
+        txn.commit().await?;
+        Ok(())
+    }
 }

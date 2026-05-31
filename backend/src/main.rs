@@ -1,28 +1,32 @@
 use actix_cors::Cors;
 use actix_web::{http::header, web, App, HttpServer};
-use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use std::env;
-
+use std::sync::Arc;
+use sea_orm::Database;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+use crate::repository::category::CategoryRepositoryImpl;
+use crate::repository::client::ClientRepositoryImpl;
 pub mod models;  
 pub mod handlers; 
 pub mod repository;
-
 
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // env 
     dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
+    let port: u16 = env::var("BACKEND_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8080);
 
     // Database connection pool
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
+    let db = Database::connect(&database_url)
         .await
-        .expect("Error while connecting to the database");
+        .expect("Failed to connect to the database");
 
     println!("Server running on http://localhost:{}", port);
 
@@ -39,7 +43,6 @@ async fn main() -> std::io::Result<()> {
     // App instance with CORS middleware and route configuration
         App::new()
             .wrap(cors)
-            .app_data(web::Data::new(pool.clone()))
             .service(
                 web::scope("/api")
                     .service(

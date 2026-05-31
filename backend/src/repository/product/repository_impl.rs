@@ -1,137 +1,46 @@
-use sqlx::PgPool;
-use crate::models::product::{CreateProductRequest, InventoryProduct, Product, UpdateProductRequest};
+use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, DeleteResult};
+use sea_orm::DbErr;
+use super::repository::ProductRepository;
+use crate::models::product::{Entity as ProductEntity, Model as ProductModel, ActiveModel as ProductActiveModel};
 
-/*
-Retrieves a list of all products in the inventory with their associated category and supplier information.
- */
-
-pub async fn get_inventory(pool: &PgPool) -> Result<Vec<InventoryProduct>, sqlx::Error> {
-    let products: Vec<InventoryProduct> = sqlx::query_as::<_, InventoryProduct>(
-        r#"
-        SELECT
-            id_product,
-            product_name,
-            unit_price::float8 AS unit_price,
-            stock,
-            category_name,
-            supplier_name
-        FROM vw_inventory
-        ORDER BY id_product
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
-
-    Ok(products)
+pub struct ProductRepositoryImpl {
+    pub db: DatabaseConnection,
 }
 
-pub async fn list_products(pool: &PgPool) -> Result<Vec<Product>, sqlx::Error> {
-    sqlx::query_as::<_, Product>(
-        r#"
-        SELECT
-            id_product,
-            name,
-            unit_price::float8 AS unit_price,
-            stock,
-            id_category,
-            id_supplier
-        FROM product
-        ORDER BY id_product
-        "#,
-    )
-    .fetch_all(pool)
-    .await
+impl ProductRepositoryImpl {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
 }
 
-pub async fn get_product(pool: &PgPool, id_product: i32) -> Result<Option<Product>, sqlx::Error> {
-    sqlx::query_as::<_, Product>(
-        r#"
-        SELECT
-            id_product,
-            name,
-            unit_price::float8 AS unit_price,
-            stock,
-            id_category,
-            id_supplier
-        FROM product
-        WHERE id_product = $1
-        "#,
-    )
-    .bind(id_product)
-    .fetch_optional(pool)
-    .await
-}
+impl ProductRepository for ProductRepositoryImpl {
+    
+    async fn create_product(&self, product_data: ProductModel) -> Result<ProductModel, DbErr> {
+        let mut active_model = product_data.into_active_model();        
+        active_model.id_product = Set(0); 
+        active_model.insert(&self.db).await
+    }
 
-pub async fn create_product(
-    pool: &PgPool,
-    payload: &CreateProductRequest,
-) -> Result<Product, sqlx::Error> {
-    sqlx::query_as::<_, Product>(
-        r#"
-        INSERT INTO product (name, unit_price, stock, id_category, id_supplier)
-        VALUES ($1, $2::numeric, $3, $4, $5)
-        RETURNING
-            id_product,
-            name,
-            unit_price::float8 AS unit_price,
-            stock,
-            id_category,
-            id_supplier
-        "#,
-    )
-    .bind(&payload.name)
-    .bind(payload.unit_price)
-    .bind(payload.stock)
-    .bind(payload.id_category)
-    .bind(payload.id_supplier)
-    .fetch_one(pool)
-    .await
-}
+    async fn list_products(&self) -> Result<Vec<ProductModel>, DbErr> {
+        ProductEntity::find().all(&self.db).await
+    }
 
-pub async fn update_product(
-    pool: &PgPool,
-    id_product: i32,
-    payload: &UpdateProductRequest,
-) -> Result<Option<Product>, sqlx::Error> {
-    sqlx::query_as::<_, Product>(
-        r#"
-        UPDATE product
-        SET
-            name = $1,
-            unit_price = $2::numeric,
-            stock = $3,
-            id_category = $4,
-            id_supplier = $5
-        WHERE id_product = $6
-        RETURNING
-            id_product,
-            name,
-            unit_price::float8 AS unit_price,
-            stock,
-            id_category,
-            id_supplier
-        "#,
-    )
-    .bind(&payload.name)
-    .bind(payload.unit_price)
-    .bind(payload.stock)
-    .bind(payload.id_category)
-    .bind(payload.id_supplier)
-    .bind(id_product)
-    .fetch_optional(pool)
-    .await
-}
+    async fn get_product(&self, id: i32) -> Result<Option<ProductModel>, DbErr> {
+        ProductEntity::find_by_id(id).one(&self.db).await
+    }
 
-pub async fn delete_product(pool: &PgPool, id_product: i32) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query(
-        r#"
-        DELETE FROM product
-        WHERE id_product = $1
-        "#,
-    )
-    .bind(id_product)
-    .execute(pool)
-    .await?;
+    async fn update_product(&self, id: i32, product_data: ProductModel) -> Result<ProductModel, DbErr> {
+        let mut active_model = product_data.into_active_model();       
+        active_model.id_product = Set(id);
+        active_model.update(&self.db).await
+    }
 
-    Ok(result.rows_affected())
+    // D - DELETE
+    async fn delete_product(&self, id: i32) -> Result<(), DbErr> {
+        let result: DeleteResult = ProductEntity::delete_by_id(id).exec(&self.db).await?;        
+        if result.rows_affected == 0 {
+            return Err(DbErr::RecordNotFound("Product not found".to_owned()));
+        }
+        Ok(())
+    }
 }
