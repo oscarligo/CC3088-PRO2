@@ -20,4 +20,10 @@ impl ClientRepository for ClientRepositoryImpl {
             .one(&self.db)
             .await
     }
+
+    async fn list_clients(&self) -> Result<Vec<ClientModel>, DbErr> {
+        ClientEntity::find()
+            .all(&self.db)
+            .await  
+    }
 }

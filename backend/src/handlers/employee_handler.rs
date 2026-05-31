@@ -1,13 +1,15 @@
-use actix_web::{web, HttpResponse};
-use sqlx::PgPool;
+use actix_web::{web, HttpResponse, Responder};
+use crate::AppState;
+use crate::repository::employee::EmployeeRepository;
 
-use crate::db::employee_repository;
-use crate::error::{map_sqlx_error, ApiError};
-
-pub async fn list_employees_handler(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiError> {
-    let employees = employee_repository::list_employees(&pool)
-        .await
-        .map_err(map_sqlx_error)?;
-
-    Ok(HttpResponse::Ok().json(employees))
+pub async fn list_employees_handler(
+    state: web::Data<AppState>,
+) -> impl Responder {
+    match state.employee_repo.list_employees().await {
+        Ok(employees) => HttpResponse::Ok().json(employees),
+        Err(err) => {
+            log::error!("Database error fetching employees: {:?}", err);
+            HttpResponse::InternalServerError().json("Error interno del servidor")
+        }
+    }
 }

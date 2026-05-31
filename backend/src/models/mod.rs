@@ -5,3 +5,4 @@ pub mod product;
 pub mod sale;
 pub mod sale_details;
 pub mod supplier;
+pub mod report;

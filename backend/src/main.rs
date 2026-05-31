@@ -8,13 +8,29 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use crate::repository::category::CategoryRepositoryImpl;
 use crate::repository::client::ClientRepositoryImpl;
+use crate::repository::employee::EmployeeRepositoryImpl;
+use crate::repository::product::ProductRepositoryImpl;
+use crate::repository::sale::SaleRepositoryImpl;
+use crate::repository::sale_details::SaleDetailRepositoryImpl;
+use crate::repository::supplier::SupplierRepositoryImpl;
 pub mod models;  
 pub mod handlers; 
 pub mod repository;
 
+pub struct AppState {
+    pub category_repo: Arc<CategoryRepositoryImpl>,
+    pub client_repo: Arc<ClientRepositoryImpl>,
+    pub employee_repo: Arc<EmployeeRepositoryImpl>,
+    pub product_repo: Arc<ProductRepositoryImpl>,
+    pub sale_repo: Arc<SaleRepositoryImpl>,
+    pub sale_detail_repo: Arc<SaleDetailRepositoryImpl>,
+    pub supplier_repo: Arc<SupplierRepositoryImpl>,
+}   
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // logger setup
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     // env 
     dotenv().ok();
     let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
@@ -40,6 +56,17 @@ async fn main() -> std::io::Result<()> {
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
             .max_age(3600);
+
+        let state = web::Data::new(AppState {
+            category_repo: Arc::new(CategoryRepositoryImpl { db: db.clone() }),
+            client_repo: Arc::new(ClientRepositoryImpl { db: db.clone() }),
+            employee_repo: Arc::new(EmployeeRepositoryImpl { db: db.clone() }),
+            product_repo: Arc::new(ProductRepositoryImpl { db: db.clone() }),
+            sale_repo: Arc::new(SaleRepositoryImpl { db: db.clone() }),
+            sale_detail_repo: Arc::new(SaleDetailRepositoryImpl { db: db.clone() }),
+            supplier_repo: Arc::new(SupplierRepositoryImpl { db: db.clone() }),
+        });
+
     // App instance with CORS middleware and route configuration
         App::new()
             .wrap(cors)
