@@ -1,24 +1,28 @@
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct Supplier {
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[sea_orm(table_name = "suppliers")] // Nombre de la tabla en tu base de datos
+pub struct Model {
+    #[sea_orm(primary_key, column_name = "id_supplier")]
+    #[serde(skip_deserializing)]
     pub id_supplier: i32,
     pub name: String,
     pub email: Option<String>,
     pub phone: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateSupplierRequest {
-    pub name: String,
-    pub email: Option<String>,
-    pub phone: Option<String>,
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(has_many = "super::product::Entity")]
+    Product,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UpdateSupplierRequest {
-    pub name: String,
-    pub email: Option<String>,
-    pub phone: Option<String>,
+impl Related<super::product::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Product.def()
+    }
 }
+
+
+impl ActiveModelBehavior for ActiveModel {}

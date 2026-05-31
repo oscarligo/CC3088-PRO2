@@ -4,10 +4,7 @@ use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use std::env;
 
-mod models;
-mod db;
-mod handlers;
-mod error;
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
