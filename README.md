@@ -20,6 +20,7 @@ quedar registrada junto con el detalle de lo vendido. La tienda necesita control
 1) Crear archivo de variables de entorno:
 
 - Copiar `.env.example` a `.env` (se pueden dejar los valores por defecto).
+- Copiar `docker-compose.yml.example` a `docker-compose.yml` (se pueden dejar los valores por defecto)
 
 2) Levantar tanto el backend como el frontend:
 
@@ -29,7 +30,7 @@ docker compose up --build
 
 3) Abrir en el navegador:
 
-- Frontend: http://localhost:5173 (por defecto)
+- Frontend: http://localhost:3000 (por defecto)
 - Backend API: http://localhost:8081 (por defecto)
 
 
