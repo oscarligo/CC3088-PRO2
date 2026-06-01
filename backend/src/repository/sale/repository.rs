@@ -5,7 +5,8 @@ use crate::models::sale_details::Model as SaleDetailModel;
 pub trait SaleRepository {
     async fn create_sale(
         &self, 
-        sale_data: SaleModel, 
+        id_client: Option<i32>,
+        id_employee: i32,
         details: Vec<SaleDetailModel>
     ) -> Result<(SaleModel, Vec<SaleDetailModel>), DbErr>;
 

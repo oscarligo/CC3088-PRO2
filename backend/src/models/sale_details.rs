@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "sale_detail")]
+#[sea_orm(table_name = "sale_details")]
 pub struct Model {
     #[sea_orm(primary_key, column_name = "id_sale_detail")]
     #[serde(skip_deserializing)] 
@@ -10,7 +10,7 @@ pub struct Model {
     pub id_sale: i32,    
     pub id_product: i32, 
     pub amount: i32,
-    pub price_at_sale: f64, 
+    pub sale_price: f64, 
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

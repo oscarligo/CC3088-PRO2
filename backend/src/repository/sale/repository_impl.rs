@@ -1,10 +1,10 @@
 use sea_orm::{
-    DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, 
-    Set, TransactionTrait, DbErr, DeleteResult, ColumnTrait, QueryFilter
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
+    IntoActiveModel, QueryFilter, Set, TransactionTrait,
 };
 
 use super::repository::SaleRepository;
-use crate::models::sale::{Entity as SaleEntity, Model as SaleModel};
+use crate::models::sale::{self, Entity as SaleEntity, Model as SaleModel};
 use crate::models::sale_details::{Entity as DetailEntity, Model as SaleDetailModel};
 
 pub struct SaleRepositoryImpl {
@@ -21,14 +21,19 @@ impl SaleRepository for SaleRepositoryImpl {
     
     async fn create_sale(
         &self, 
-        sale_data: SaleModel, 
+        id_client: Option<i32>,
+        id_employee: i32,
         details: Vec<SaleDetailModel>
     ) -> Result<(SaleModel, Vec<SaleDetailModel>), DbErr> {
         
         let txn = self.db.begin().await?;
 
-        let mut sale_active = sale_data.into_active_model();
-        sale_active.id_sale = Set(0); // Forzar autoincrementable
+        let sale_active = sale::ActiveModel {
+            id_sale: Set(0),
+            id_client: Set(id_client),
+            id_employee: Set(id_employee),
+            date: ActiveValue::NotSet,
+        };
         
         let saved_sale = sale_active.insert(&txn).await?;
         let generated_sale_id = saved_sale.id_sale;

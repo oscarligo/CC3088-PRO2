@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "sales")]
+#[sea_orm(table_name = "sale")]
 pub struct Model {
     #[sea_orm(primary_key, column_name = "id_sale")]
     #[serde(skip_deserializing)] 
@@ -10,7 +10,7 @@ pub struct Model {
     pub id_client: Option<i32>, 
     pub id_employee: i32,   
     #[sea_orm(default_value = "expr:NOW()")] 
-    pub sale_date: DateTime,
+    pub date: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

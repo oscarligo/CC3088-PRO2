@@ -1,13 +1,10 @@
-// src/handlers/report_handler.rs
-
 use actix_web::{web, HttpResponse, Responder};
 use serde::Deserialize;
 use crate::AppState;
+use crate::repository::report::ReportRepository;
 
 // 1. GET /api/reports/sale-lines
 pub async fn sale_lines_handler(state: web::Data<AppState>) -> impl Responder {
-    // Nota: Recuerda agregar el trait 'ReportRepository' a tu AppState si decides aislarlo,
-    // o puedes colgar estas funciones directamente en un repositorio analítico.
     match state.report_repo.list_sale_lines().await {
         Ok(rows) => HttpResponse::Ok().json(rows),
         Err(err) => {

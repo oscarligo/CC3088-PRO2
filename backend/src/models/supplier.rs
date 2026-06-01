@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "suppliers")] // Nombre de la tabla en tu base de datos
+#[sea_orm(table_name = "supplier")] // Nombre de la tabla en tu base de datos
 pub struct Model {
     #[sea_orm(primary_key, column_name = "id_supplier")]
     #[serde(skip_deserializing)]

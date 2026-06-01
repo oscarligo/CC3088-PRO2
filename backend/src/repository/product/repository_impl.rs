@@ -1,7 +1,7 @@
 use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, DeleteResult};
 use sea_orm::DbErr;
 use super::repository::ProductRepository;
-use crate::models::product::{Entity as ProductEntity, Model as ProductModel, ActiveModel as ProductActiveModel};
+use crate::models::product::{Entity as ProductEntity, Model as ProductModel};
 
 pub struct ProductRepositoryImpl {
     pub db: DatabaseConnection,

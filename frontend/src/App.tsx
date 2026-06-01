@@ -9,7 +9,7 @@ type TabKey = 'inventario' | 'productos' | 'proveedores' | 'reportes'
 
 function App() {
   const apiBaseUrl = useMemo(() => {
-    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8081'
     return base.replace(/\/$/, '')
   }, [])
 

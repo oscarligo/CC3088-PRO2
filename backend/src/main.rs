@@ -1,18 +1,22 @@
+// src/main.rs
+
 use actix_cors::Cors;
 use actix_web::{http::header, web, App, HttpServer};
 use dotenv::dotenv;
 use std::env;
 use std::sync::Arc;
 use sea_orm::Database;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+
+// Importaciones de tus repositorios
 use crate::repository::category::CategoryRepositoryImpl;
 use crate::repository::client::ClientRepositoryImpl;
 use crate::repository::employee::EmployeeRepositoryImpl;
 use crate::repository::product::ProductRepositoryImpl;
+use crate::repository::report::ReportRepositoryImpl;
 use crate::repository::sale::SaleRepositoryImpl;
 use crate::repository::sale_details::SaleDetailRepositoryImpl;
 use crate::repository::supplier::SupplierRepositoryImpl;
+
 pub mod models;  
 pub mod handlers; 
 pub mod repository;
@@ -22,6 +26,7 @@ pub struct AppState {
     pub client_repo: Arc<ClientRepositoryImpl>,
     pub employee_repo: Arc<EmployeeRepositoryImpl>,
     pub product_repo: Arc<ProductRepositoryImpl>,
+    pub report_repo: Arc<ReportRepositoryImpl>,
     pub sale_repo: Arc<SaleRepositoryImpl>,
     pub sale_detail_repo: Arc<SaleDetailRepositoryImpl>,
     pub supplier_repo: Arc<SupplierRepositoryImpl>,
@@ -29,14 +34,15 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // logger setup
+    // Logger setup
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-    // env 
+    
+    // Env configuration
     dotenv().ok();
     let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let port: u16 = env::var("BACKEND_PORT")
         .ok()
-        .and_then(|p| p.parse().ok())
+        .and_then(|p: String| p.parse().ok())
         .unwrap_or(8080);
 
     // Database connection pool
@@ -46,30 +52,30 @@ async fn main() -> std::io::Result<()> {
 
     println!("Server running on http://localhost:{}", port);
 
+    // 🌟 OPTIMIZACIÓN CRÍTICA: Inicialización ÚNICA fuera del servidor web
+    // Al instanciarlos aquí, el pool y tus structs viven en un solo bloque de memoria global.
+    let shared_state = web::Data::new(AppState {
+        category_repo: Arc::new(CategoryRepositoryImpl { db: db.clone() }),
+        client_repo: Arc::new(ClientRepositoryImpl { db: db.clone() }),
+        employee_repo: Arc::new(EmployeeRepositoryImpl { db: db.clone() }),
+        product_repo: Arc::new(ProductRepositoryImpl { db: db.clone() }),
+        report_repo: Arc::new(ReportRepositoryImpl { db: db.clone() }),
+        sale_repo: Arc::new(SaleRepositoryImpl { db: db.clone() }),
+        sale_detail_repo: Arc::new(SaleDetailRepositoryImpl { db: db.clone() }),
+        supplier_repo: Arc::new(SupplierRepositoryImpl { db: db.clone() }),
+    });
+
     // Actix-web server
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin_fn(|origin, _req_head| {
-                origin.as_bytes().starts_with(b"http://localhost:")
-                    || origin.as_bytes().starts_with(b"http://127.0.0.1:")
-            })
+            .allow_any_origin()
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
             .max_age(3600);
 
-        let state = web::Data::new(AppState {
-            category_repo: Arc::new(CategoryRepositoryImpl { db: db.clone() }),
-            client_repo: Arc::new(ClientRepositoryImpl { db: db.clone() }),
-            employee_repo: Arc::new(EmployeeRepositoryImpl { db: db.clone() }),
-            product_repo: Arc::new(ProductRepositoryImpl { db: db.clone() }),
-            sale_repo: Arc::new(SaleRepositoryImpl { db: db.clone() }),
-            sale_detail_repo: Arc::new(SaleDetailRepositoryImpl { db: db.clone() }),
-            supplier_repo: Arc::new(SupplierRepositoryImpl { db: db.clone() }),
-        });
-
-    // App instance with CORS middleware and route configuration
         App::new()
             .wrap(cors)
+            .app_data(shared_state.clone())
             .service(
                 web::scope("/api")
                     .service(

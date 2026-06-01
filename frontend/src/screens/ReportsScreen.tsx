@@ -8,15 +8,15 @@ type SaleLine = {
   employee_name: string
   product_name: string
   amount: number
-  sale_price: number
-  line_total: number
+  sale_price: number | string
+  line_total:  number | string
 }
 
 type SupplierProductCount = {
   id_supplier: number
   supplier_name: string
   products_count: number
-  avg_unit_price: number | null
+  avg_unit_price: number | string | null 
 }
 
 type CategorySales = {
@@ -24,16 +24,16 @@ type CategorySales = {
   category_name: string
   items_sold: number
   sales_count: number
-  total_revenue: number
+  total_revenue: number | string
 }
 
 type InventoryProduct = {
   id_product: number
   product_name: string
-  unit_price: number
+  unit_price: number | string
   stock: number
-  category_name: string
-  supplier_name: string
+  category_name: number | string
+  supplier_name: number | string
 }
 
 type Client = {
@@ -46,7 +46,7 @@ type Client = {
 type TopClient = {
   id_client: number
   client_name: string
-  total_spent: number
+  total_spent: number | string
   sales_count: number
 }
 
@@ -59,10 +59,10 @@ type Employee = {
 type Product = {
   id_product: number
   name: string
-  unit_price: number
+  unit_price: number | string
   stock: number
-  id_category: number
-  id_supplier: number
+  id_category: number | string
+  id_supplier: number | string
 }
 
 type CreateSaleResponse = {
@@ -302,8 +302,8 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                       <td>{r.employee_name}</td>
                       <td>{r.product_name}</td>
                       <td className="mono">{r.amount}</td>
-                      <td className="mono">{r.sale_price.toFixed(2)}</td>
-                      <td className="mono">{r.line_total.toFixed(2)}</td>
+                      <td className="mono">{Number(r.sale_price).toFixed(2)}</td>
+                      <td className="mono">{Number(r.line_total).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -335,7 +335,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                       <td>{r.supplier_name}</td>
                       <td className="mono">{r.products_count}</td>
                       <td className="mono">
-                        {r.avg_unit_price == null ? '-' : r.avg_unit_price.toFixed(2)}
+                        {r.avg_unit_price == null ? '-' : Number(r.avg_unit_price).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -369,7 +369,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                       <td>{r.category_name}</td>
                       <td className="mono">{r.items_sold}</td>
                       <td className="mono">{r.sales_count}</td>
-                      <td className="mono">{r.total_revenue.toFixed(2)}</td>
+                      <td className="mono">{Number(r.total_revenue).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -470,7 +470,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                       <td className="mono">{c.id_client}</td>
                       <td>{c.client_name}</td>
                       <td className="mono">{c.sales_count}</td>
-                      <td className="mono">{c.total_spent.toFixed(2)}</td>
+                      <td className="mono">{Number(c.total_spent).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>

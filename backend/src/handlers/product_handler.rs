@@ -1,5 +1,3 @@
-// src/handlers/product_handler.rs
-
 use actix_web::{web, HttpResponse, Responder};
 use crate::AppState;
 use crate::repository::product::ProductRepository;
@@ -59,7 +57,7 @@ pub async fn create_product_handler(
     if product_data.name.trim().is_empty() {
         return HttpResponse::BadRequest().json("Name is required");
     }
-    if product_data.unit_price < 0.0 {
+    if product_data.unit_price.is_sign_negative() {
         return HttpResponse::BadRequest().json("Unit price must be >= 0");
     }
     if product_data.stock < 0 {
@@ -88,7 +86,7 @@ pub async fn update_product_handler(
     if product_data.name.trim().is_empty() {
         return HttpResponse::BadRequest().json("Name is required");
     }
-    if product_data.unit_price < 0.0 {
+    if product_data.unit_price.is_sign_negative() {
         return HttpResponse::BadRequest().json("Unit price must be >= 0");
     }
     if product_data.stock < 0 {

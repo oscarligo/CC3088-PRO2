@@ -4,7 +4,7 @@ import { apiJson, apiNoContent } from '../api'
 type Product = {
   id_product: number
   name: string
-  unit_price: number
+  unit_price: number | string 
   stock: number
   id_category: number
   id_supplier: number
@@ -105,7 +105,6 @@ export function ProductsScreen({ apiBaseUrl }: Props) {
     void load()
 
     return () => controller.abort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productsUrl, categoriesUrl, suppliersUrl])
 
   const startEdit = (p: Product) => {
@@ -336,7 +335,7 @@ export function ProductsScreen({ apiBaseUrl }: Props) {
                 <tr key={p.id_product}>
                   <td className="mono">{p.id_product}</td>
                   <td>{p.name}</td>
-                  <td className="mono">{p.unit_price.toFixed(2)}</td>
+                  <td className="mono">{Number(p.unit_price).toFixed(2)}</td>
                   <td className="mono">{p.stock}</td>
                   <td>{categoryById.get(p.id_category)?.name ?? p.id_category}</td>
                   <td>{supplierById.get(p.id_supplier)?.name ?? p.id_supplier}</td>

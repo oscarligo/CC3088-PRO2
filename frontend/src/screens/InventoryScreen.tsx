@@ -3,11 +3,11 @@ import { apiJson } from '../api'
 
 export type InventoryProduct = {
   id_product: number
-  product_name: string
-  unit_price: number
+  name: string
+  unit_price: number | string
   stock: number
-  category_name: string
-  supplier_name: string
+  id_category: string
+  id_supplier: string
 }
 
 type Props = {
@@ -85,11 +85,11 @@ export function InventoryScreen({ apiBaseUrl }: Props) {
               {products.map((p) => (
                 <tr key={p.id_product}>
                   <td className="mono">{p.id_product}</td>
-                  <td>{p.product_name}</td>
-                  <td className="mono">{p.unit_price.toFixed(2)}</td>
+                  <td>{p.name}</td>
+                  <td className="mono">{typeof p.unit_price === 'string' ? parseFloat(p.unit_price).toFixed(2) : p.unit_price.toFixed(2)}</td>
                   <td className="mono">{p.stock}</td>
-                  <td>{p.category_name}</td>
-                  <td>{p.supplier_name}</td>
+                  <td>{p.id_category}</td>
+                  <td>{p.id_supplier}</td>
                 </tr>
               ))}
             </tbody>

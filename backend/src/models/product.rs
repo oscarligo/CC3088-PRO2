@@ -2,13 +2,13 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "products")]
+#[sea_orm(table_name = "product")]
 pub struct Model {
     #[sea_orm(primary_key, column_name = "id_product")]
     #[serde(skip_deserializing)] 
     pub id_product: i32,
     pub name: String,
-    pub unit_price: f64, 
+    pub unit_price: Decimal, 
     pub stock: i32,
     pub id_category: i32,
     pub id_supplier: i32,

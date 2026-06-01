@@ -1,92 +1,105 @@
-use actix_web::{web, HttpResponse};
-use sqlx::PgPool;
+use actix_web::{web, HttpResponse, Responder};
 
-use crate::db::supplier_repository;
-use crate::error::{map_sqlx_error, ApiError};
-use crate::models::supplier::{CreateSupplierRequest, UpdateSupplierRequest};
+use crate::models::supplier::Model as SupplierModel;
+use crate::repository::supplier::SupplierRepository;
+use crate::AppState;
 
-pub async fn list_suppliers_handler(pool: web::Data<PgPool>) -> Result<HttpResponse, ApiError> {
-    let suppliers = supplier_repository::list_suppliers(&pool)
-        .await
-        .map_err(map_sqlx_error)?;
-
-    Ok(HttpResponse::Ok().json(suppliers))
+pub async fn list_suppliers_handler(state: web::Data<AppState>) -> impl Responder {
+    match state.supplier_repo.list_suppliers().await {
+        Ok(suppliers) => HttpResponse::Ok().json(suppliers),
+        Err(err) => {
+            log::error!("Database error listing suppliers: {:?}", err);
+            HttpResponse::InternalServerError().json("Error interno del servidor")
+        }
+    }
 }
 
-pub async fn get_supplier_handler(
-    pool: web::Data<PgPool>,
-    id: web::Path<i32>,
-) -> Result<HttpResponse, ApiError> {
-    let supplier = supplier_repository::get_supplier(&pool, id.into_inner())
-        .await
-        .map_err(map_sqlx_error)?;
+pub async fn get_supplier_handler(state: web::Data<AppState>, id: web::Path<i32>) -> impl Responder {
+    let supplier_id = id.into_inner();
 
-    match supplier {
-        Some(supplier) => Ok(HttpResponse::Ok().json(supplier)),
-        None => Err(ApiError::not_found("Proveedor no encontrado")),
+    match state.supplier_repo.get_supplier(supplier_id).await {
+        Ok(Some(supplier)) => HttpResponse::Ok().json(supplier),
+        Ok(None) => HttpResponse::NotFound().json("Proveedor no encontrado"),
+        Err(err) => {
+            log::error!(
+                "Database error fetching supplier {}: {:?}",
+                supplier_id,
+                err
+            );
+            HttpResponse::InternalServerError().json("Error interno del servidor")
+        }
     }
 }
 
 pub async fn create_supplier_handler(
-    pool: web::Data<PgPool>,
-    payload: web::Json<CreateSupplierRequest>,
-) -> Result<HttpResponse, ApiError> {
-    let payload = payload.into_inner();
+    state: web::Data<AppState>,
+    payload: web::Json<SupplierModel>,
+) -> impl Responder {
+    let supplier_data = payload.into_inner();
 
-    if payload.name.trim().is_empty() {
-        return Err(ApiError::bad_request("El nombre es obligatorio"));
+    if supplier_data.name.trim().is_empty() {
+        return HttpResponse::BadRequest().json("El nombre es obligatorio");
     }
 
-    let created = supplier_repository::create_supplier(&pool, &payload)
-        .await
-        .map_err(map_sqlx_error)?;
-
-    Ok(HttpResponse::Created().json(created))
+    match state.supplier_repo.create_supplier(supplier_data).await {
+        Ok(created) => HttpResponse::Created().json(created),
+        Err(err) => {
+            log::error!("Database error creating supplier: {:?}", err);
+            HttpResponse::InternalServerError().json("Error interno del servidor")
+        }
+    }
 }
 
 pub async fn update_supplier_handler(
-    pool: web::Data<PgPool>,
+    state: web::Data<AppState>,
     id: web::Path<i32>,
-    payload: web::Json<UpdateSupplierRequest>,
-) -> Result<HttpResponse, ApiError> {
-    let id = id.into_inner();
-    let payload = payload.into_inner();
+    payload: web::Json<SupplierModel>,
+) -> impl Responder {
+    let supplier_id = id.into_inner();
+    let supplier_data = payload.into_inner();
 
-    if payload.name.trim().is_empty() {
-        return Err(ApiError::bad_request("El nombre es obligatorio"));
+    if supplier_data.name.trim().is_empty() {
+        return HttpResponse::BadRequest().json("El nombre es obligatorio");
     }
 
-    let updated = supplier_repository::update_supplier(&pool, id, &payload)
+    match state
+        .supplier_repo
+        .update_supplier(supplier_id, supplier_data)
         .await
-        .map_err(map_sqlx_error)?;
-
-    match updated {
-        Some(supplier) => Ok(HttpResponse::Ok().json(supplier)),
-        None => Err(ApiError::not_found("Proveedor no encontrado")),
-    }
-}
-
-fn map_delete_supplier_error(error: sqlx::Error) -> ApiError {
-    if let sqlx::Error::Database(db_err) = &error {
-        if db_err.code().as_deref() == Some("23503") {
-            return ApiError::conflict("No se puede eliminar el proveedor: tiene productos asociados");
+    {
+        Ok(updated) => HttpResponse::Ok().json(updated),
+        Err(sea_orm::DbErr::RecordNotFound(_)) => {
+            HttpResponse::NotFound().json("Proveedor no encontrado")
+        }
+        Err(err) => {
+            log::error!(
+                "Database error updating supplier {}: {:?}",
+                supplier_id,
+                err
+            );
+            HttpResponse::InternalServerError().json("Error interno del servidor")
         }
     }
-
-    map_sqlx_error(error)
 }
 
 pub async fn delete_supplier_handler(
-    pool: web::Data<PgPool>,
+    state: web::Data<AppState>,
     id: web::Path<i32>,
-) -> Result<HttpResponse, ApiError> {
-    let affected = supplier_repository::delete_supplier(&pool, id.into_inner())
-        .await
-        .map_err(map_delete_supplier_error)?;
+) -> impl Responder {
+    let supplier_id = id.into_inner();
 
-    if affected == 0 {
-        return Err(ApiError::not_found("Proveedor no encontrado"));
+    match state.supplier_repo.delete_supplier(supplier_id).await {
+        Ok(_) => HttpResponse::NoContent().finish(),
+        Err(sea_orm::DbErr::RecordNotFound(_)) => {
+            HttpResponse::NotFound().json("Proveedor no encontrado")
+        }
+        Err(err) => {
+            log::error!(
+                "Database error deleting supplier {}: {:?}",
+                supplier_id,
+                err
+            );
+            HttpResponse::InternalServerError().json("Error interno del servidor")
+        }
     }
-
-    Ok(HttpResponse::NoContent().finish())
 }
