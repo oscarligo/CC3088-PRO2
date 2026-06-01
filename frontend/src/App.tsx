@@ -13,8 +13,8 @@ const ROLE_TABS: Record<AppRole, TabKey[]> = {
   admin: ['inventario', 'productos', 'proveedores', 'reportes'],
   inventario: ['inventario', 'productos', 'proveedores'],
   analista: ['inventario', 'reportes'],
-  cajero: [],
-  auditor: [],
+  cajero: ['reportes'],
+  auditor: ['inventario', 'reportes', 'productos'],
 }
 
 const ROLE_LABELS: Record<AppRole, string> = {

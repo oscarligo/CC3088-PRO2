@@ -73,13 +73,13 @@ src/
 
 Los procedimientos se crean en `database/init.sql`, el backend los ejecuta con `CALL ...` desde los repositorios, y el frontend solo consume los resultados a través de la API.
 
-| Procedure | Qué hace | Dónde se usa en backend | Endpoint/API | Dónde se ve en frontend | Observaciones |
-| --- | --- | --- | --- | --- | --- |
-| `sp_registrar_venta_transaccional` | Registra una venta, valida stock y deja que los triggers actualicen stock y total. | `backend/src/repository/sale/repository_impl.rs` en `create_sale()` | `POST /api/sales` vía `backend/src/handlers/sale_handler.rs` | Formulario **Registrar venta** en `frontend/src/screens/ReportsScreen.tsx` | El backend solo envía `details[0]`, así que actualmente el procedure se usa para un solo detalle por venta. |
-| `sp_reporte_top_productos` | Devuelve en JSON los productos más vendidos. | `backend/src/repository/report/repository_impl.rs` en `top_clients()` | `GET /api/reports/top-clients` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Top clientes por gasto** en `frontend/src/screens/ReportsScreen.tsx` | Hay una diferencia de naming: el SQL habla de productos, pero la ruta/repositorio/UI lo presentan como clientes. |
-| `sp_reporte_ventas_categoria` | Devuelve en JSON el total vendido por categoría. | `backend/src/repository/report/repository_impl.rs` en `category_sales()` | `GET /api/reports/category-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Ventas por categoría** en `frontend/src/screens/ReportsScreen.tsx` | El backend lo deserializa con aliases para adaptarlo al modelo `CategorySales`. |
-| `sp_clientes_frecuentes` | Devuelve en JSON los clientes con al menos 2 compras. | `backend/src/repository/report/repository_impl.rs` en `clients_with_min_sales()` | `GET /api/reports/clients-min-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Clientes con al menos 2 ventas** en `frontend/src/screens/ReportsScreen.tsx` | Implementa el requisito de subquery con `IN` + `HAVING COUNT(...) >= 2`. |
-| `sp_productos_sin_ventas` | Devuelve en JSON los productos que no aparecen en `sale_details`. | `backend/src/repository/report/repository_impl.rs` en `unsold_products()` | `GET /api/reports/unsold-products` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Productos sin ventas** en `frontend/src/screens/ReportsScreen.tsx` | Implementa el requisito de subquery con `NOT EXISTS`. |
+| Procedure | Qué hace | Dónde se usa en backend | Endpoint/API | Dónde se ve en frontend |
+| --- | --- | --- | --- | --- |
+| `sp_registrar_venta_transaccional` | Registra una venta, valida stock y deja que los triggers actualicen stock y total. | `backend/src/repository/sale/repository_impl.rs` en `create_sale()` | `POST /api/sales` vía `backend/src/handlers/sale_handler.rs` | Formulario **Registrar venta** en `frontend/src/screens/ReportsScreen.tsx` |
+| `sp_reporte_top_productos` | Devuelve en JSON los productos más vendidos. | `backend/src/repository/report/repository_impl.rs` en `top_clients()` | `GET /api/reports/top-clients` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Top clientes por gasto** en `frontend/src/screens/ReportsScreen.tsx` | 
+| `sp_reporte_ventas_categoria` | Devuelve en JSON el total vendido por categoría. | `backend/src/repository/report/repository_impl.rs` en `category_sales()` | `GET /api/reports/category-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Ventas por categoría** en `frontend/src/screens/ReportsScreen.tsx` |
+| `sp_clientes_frecuentes` | Devuelve en JSON los clientes con al menos 2 compras. | `backend/src/repository/report/repository_impl.rs` en `clients_with_min_sales()` | `GET /api/reports/clients-min-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Clientes con al menos 2 ventas** en `frontend/src/screens/ReportsScreen.tsx` | 
+| `sp_productos_sin_ventas` | Devuelve en JSON los productos que no aparecen en `sale_details`. | `backend/src/repository/report/repository_impl.rs` en `unsold_products()` | `GET /api/reports/unsold-products` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Productos sin ventas** en `frontend/src/screens/ReportsScreen.tsx` | 
 
 ## Roles y seguridad
 
@@ -101,10 +101,10 @@ La aplicación usa dos capas relacionadas, pero no idénticas:
 | Rol SQL | Usuario de prueba | Permisos definidos en SQL | Uso en backend | Uso en frontend |
 | --- | --- | --- | --- | --- |
 | `role_admin` | `user_master_admin` | `ALL PRIVILEGES` sobre tablas y secuencias del esquema `public`. | `AppRole::Admin` en `backend/src/auth.rs`. `extract_session(...)` le da acceso total a todos los handlers. | Ve las pestañas `Inventario`, `Productos`, `Proveedores` y `Reportes` en `frontend/src/App.tsx`. También puede usar el formulario **Registrar venta** en `ReportsScreen`. |
-| `role_cajero` | `user_cajero` | `INSERT` y `SELECT` sobre `sale` y `sale_details`; `SELECT` sobre `product`, `client` y `employee`. | `AppRole::Cajero` puede entrar a `POST /api/sales`, `GET /api/clients` y `GET /api/employees`. | Hoy no tiene pestañas visibles porque `ROLE_TABS.cajero = []` en `frontend/src/App.tsx`. El formulario de venta existe en `ReportsScreen`, pero el cajero no navega a esa vista con la configuración actual. |
+| `role_cajero` | `user_cajero` | `INSERT` y `SELECT` sobre `sale` y `sale_details`; `SELECT` sobre `product`, `client` y `employee`. | `AppRole::Cajero` puede entrar a `POST /api/sales`, `GET /api/clients` y `GET /api/employees`. | Ve la pestaña `reportes` |
 | `role_inventario` | `user_inventario` | CRUD sobre `product`, `product_category` y `supplier`; lectura de `vw_inventory`. | `AppRole::Inventario` puede usar inventario, productos, proveedores y categorías desde sus handlers. | Ve las pestañas `Inventario`, `Productos` y `Proveedores`. |
 | `role_analista` | `user_analista` | `SELECT` sobre ventas, productos, categorías, proveedores y `vw_inventory`. | `AppRole::Analista` puede consumir todos los endpoints de `/api/reports/*` y consultas de lectura de inventario/catálogo. | Ve las pestañas `Inventario` y `Reportes`. |
-| `role_auditor` | `user_auditor` | `SELECT` sobre `client` y `employee`. | `AppRole::Auditor` puede entrar a `GET /api/clients` y `GET /api/employees`. | Hoy no tiene pestañas visibles porque `ROLE_TABS.auditor = []` en `frontend/src/App.tsx`. |
+| `role_auditor` | `user_auditor` | `SELECT` sobre `client` y `employee`. | `AppRole::Auditor` puede entrar a `GET /api/clients` y `GET /api/employees`. | Ve las pestañas `inventario`, `reportes` y `productos` |
 
 ### Handlers protegidos por rol
 
