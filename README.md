@@ -68,3 +68,50 @@ src/
 	- GROUP BY + HAVING + agregación: **Productos por proveedor** y **Ventas por categoría** (pestaña **Reportes SQL**).
 	- CTE (WITH): **Top clientes por gasto** (pestaña **Reportes SQL**).
 	- Transacción explícita con ROLLBACK: **Registrar venta** (pestaña **Reportes SQL**). Si se ingresa una cantidad mayor al stock, el backend responde error y hace rollback.
+
+## Stored procedures utilizados
+
+Los procedimientos se crean en `database/init.sql`, el backend los ejecuta con `CALL ...` desde los repositorios, y el frontend solo consume los resultados a través de la API.
+
+| Procedure | Qué hace | Dónde se usa en backend | Endpoint/API | Dónde se ve en frontend | Observaciones |
+| --- | --- | --- | --- | --- | --- |
+| `sp_registrar_venta_transaccional` | Registra una venta, valida stock y deja que los triggers actualicen stock y total. | `backend/src/repository/sale/repository_impl.rs` en `create_sale()` | `POST /api/sales` vía `backend/src/handlers/sale_handler.rs` | Formulario **Registrar venta** en `frontend/src/screens/ReportsScreen.tsx` | El backend solo envía `details[0]`, así que actualmente el procedure se usa para un solo detalle por venta. |
+| `sp_reporte_top_productos` | Devuelve en JSON los productos más vendidos. | `backend/src/repository/report/repository_impl.rs` en `top_clients()` | `GET /api/reports/top-clients` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Top clientes por gasto** en `frontend/src/screens/ReportsScreen.tsx` | Hay una diferencia de naming: el SQL habla de productos, pero la ruta/repositorio/UI lo presentan como clientes. |
+| `sp_reporte_ventas_categoria` | Devuelve en JSON el total vendido por categoría. | `backend/src/repository/report/repository_impl.rs` en `category_sales()` | `GET /api/reports/category-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Ventas por categoría** en `frontend/src/screens/ReportsScreen.tsx` | El backend lo deserializa con aliases para adaptarlo al modelo `CategorySales`. |
+| `sp_clientes_frecuentes` | Devuelve en JSON los clientes con al menos 2 compras. | `backend/src/repository/report/repository_impl.rs` en `clients_with_min_sales()` | `GET /api/reports/clients-min-sales` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Clientes con al menos 2 ventas** en `frontend/src/screens/ReportsScreen.tsx` | Implementa el requisito de subquery con `IN` + `HAVING COUNT(...) >= 2`. |
+| `sp_productos_sin_ventas` | Devuelve en JSON los productos que no aparecen en `sale_details`. | `backend/src/repository/report/repository_impl.rs` en `unsold_products()` | `GET /api/reports/unsold-products` vía `backend/src/handlers/report_handler.rs` | Tarjeta **Productos sin ventas** en `frontend/src/screens/ReportsScreen.tsx` | Implementa el requisito de subquery con `NOT EXISTS`. |
+
+## Roles y seguridad
+
+La aplicación usa dos capas relacionadas, pero no idénticas:
+
+1. Roles y usuarios de PostgreSQL creados en `database/init.sql`.
+2. Roles de aplicación (`AppRole`) mapeados en `backend/src/auth.rs` y reflejados en `frontend/src/auth.ts` y `frontend/src/App.tsx`.
+
+### Flujo real de uso de roles
+
+1. El login entra por `POST /api/auth/login` en `backend/src/handlers/auth_handler.rs`.
+2. `backend/src/auth.rs` valida que el usuario sea uno de los permitidos (`user_master_admin`, `user_cajero`, etc.) y prueba las credenciales intentando abrir una conexión PostgreSQL con ese usuario.
+3. Si el login funciona, el backend emite un JWT con el `AppRole`.
+4. Cada handler protege sus endpoints con `extract_session(...)`.
+5. Las consultas normales de la app usan la conexión compartida creada en `backend/src/main.rs` desde `DATABASE_URL`; por eso, en tiempo de ejecución la autorización principal la hace el backend con JWT/roles de aplicación, no un cambio de usuario SQL por request.
+
+### Matriz de roles
+
+| Rol SQL | Usuario de prueba | Permisos definidos en SQL | Uso en backend | Uso en frontend |
+| --- | --- | --- | --- | --- |
+| `role_admin` | `user_master_admin` | `ALL PRIVILEGES` sobre tablas y secuencias del esquema `public`. | `AppRole::Admin` en `backend/src/auth.rs`. `extract_session(...)` le da acceso total a todos los handlers. | Ve las pestañas `Inventario`, `Productos`, `Proveedores` y `Reportes` en `frontend/src/App.tsx`. También puede usar el formulario **Registrar venta** en `ReportsScreen`. |
+| `role_cajero` | `user_cajero` | `INSERT` y `SELECT` sobre `sale` y `sale_details`; `SELECT` sobre `product`, `client` y `employee`. | `AppRole::Cajero` puede entrar a `POST /api/sales`, `GET /api/clients` y `GET /api/employees`. | Hoy no tiene pestañas visibles porque `ROLE_TABS.cajero = []` en `frontend/src/App.tsx`. El formulario de venta existe en `ReportsScreen`, pero el cajero no navega a esa vista con la configuración actual. |
+| `role_inventario` | `user_inventario` | CRUD sobre `product`, `product_category` y `supplier`; lectura de `vw_inventory`. | `AppRole::Inventario` puede usar inventario, productos, proveedores y categorías desde sus handlers. | Ve las pestañas `Inventario`, `Productos` y `Proveedores`. |
+| `role_analista` | `user_analista` | `SELECT` sobre ventas, productos, categorías, proveedores y `vw_inventory`. | `AppRole::Analista` puede consumir todos los endpoints de `/api/reports/*` y consultas de lectura de inventario/catálogo. | Ve las pestañas `Inventario` y `Reportes`. |
+| `role_auditor` | `user_auditor` | `SELECT` sobre `client` y `employee`. | `AppRole::Auditor` puede entrar a `GET /api/clients` y `GET /api/employees`. | Hoy no tiene pestañas visibles porque `ROLE_TABS.auditor = []` en `frontend/src/App.tsx`. |
+
+### Handlers protegidos por rol
+
+- `backend/src/handlers/product_handler.rs`: `Inventario`, `Analista` para lectura; solo `Inventario` para crear/editar/eliminar.
+- `backend/src/handlers/supplier_handler.rs`: `Inventario`, `Analista` para lectura; solo `Inventario` para crear/editar/eliminar.
+- `backend/src/handlers/category_handler.rs`: `Inventario` y `Analista`.
+- `backend/src/handlers/report_handler.rs`: `Analista`; `Admin` también entra por bypass global.
+- `backend/src/handlers/sale_handler.rs`: `Cajero`; `Admin` también entra por bypass global.
+- `backend/src/handlers/client_handler.rs`: `Cajero` y `Auditor`.
+- `backend/src/handlers/employee_handler.rs`: `Cajero` y `Auditor`.
