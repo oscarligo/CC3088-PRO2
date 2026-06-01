@@ -3,11 +3,13 @@ import { apiJson } from '../api'
 
 export type InventoryProduct = {
   id_product: number
-  name: string
+  product_name: string
   unit_price: number | string
   stock: number
-  id_category: string
-  id_supplier: string
+  id_category: number
+  category_name: string
+  id_supplier: number
+  supplier_name: string
 }
 
 type Props = {
@@ -50,7 +52,7 @@ export function InventoryScreen({ apiBaseUrl }: Props) {
   return (
     <section className="section">
       <header className="sectionHeader">
-        <h2>Inventario (VIEW)</h2>
+        <h2>Inventario</h2>
         <p className="muted">
           Este listado se alimenta desde el backend usando el VIEW{' '}
           <code>vw_inventory</code>.
@@ -85,11 +87,11 @@ export function InventoryScreen({ apiBaseUrl }: Props) {
               {products.map((p) => (
                 <tr key={p.id_product}>
                   <td className="mono">{p.id_product}</td>
-                  <td>{p.name}</td>
+                  <td>{p.product_name}</td>
                   <td className="mono">{typeof p.unit_price === 'string' ? parseFloat(p.unit_price).toFixed(2) : p.unit_price.toFixed(2)}</td>
                   <td className="mono">{p.stock}</td>
-                  <td>{p.id_category}</td>
-                  <td>{p.id_supplier}</td>
+                  <td>{p.category_name}</td>
+                  <td>{p.supplier_name}</td>
                 </tr>
               ))}
             </tbody>

@@ -8,7 +8,7 @@ pub async fn get_inventory_handler(
     state: web::Data<AppState>,
 ) -> impl Responder {
 
-    match state.product_repo.list_products().await {
+    match state.product_repo.list_inventory().await {
         Ok(inventory) => HttpResponse::Ok().json(inventory),
         Err(err) => {
             log::error!("Database error fetching inventory: {:?}", err);

@@ -29,11 +29,13 @@ type CategorySales = {
 
 type InventoryProduct = {
   id_product: number
-  name: string
+  product_name: string
   unit_price: number | string
   stock: number
   id_category: number
+  category_name: string
   id_supplier: number
+  supplier_name: string
 }
 
 type Client = {
@@ -403,10 +405,10 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                   {unsoldProducts.map((p) => (
                     <tr key={p.id_product}>
                       <td className="mono">{p.id_product}</td>
-                      <td>{p.name}</td>
+                      <td>{p.product_name}</td>
                       <td className="mono">{p.stock}</td>
-                      <td className="mono">{p.id_category}</td>
-                      <td className="mono">{p.id_supplier}</td>
+                      <td>{p.category_name}</td>
+                      <td>{p.supplier_name}</td>
                     </tr>
                   ))}
                 </tbody>

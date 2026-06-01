@@ -1,6 +1,6 @@
-use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, DeleteResult};
-use sea_orm::DbErr;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, IntoActiveModel, Set};
 use super::repository::ProductRepository;
+use crate::models::inventory::{Entity as InventoryEntity, Model as InventoryItem};
 use crate::models::product::{Entity as ProductEntity, Model as ProductModel};
 
 pub struct ProductRepositoryImpl {
@@ -23,6 +23,10 @@ impl ProductRepository for ProductRepositoryImpl {
 
     async fn list_products(&self) -> Result<Vec<ProductModel>, DbErr> {
         ProductEntity::find().all(&self.db).await
+    }
+
+    async fn list_inventory(&self) -> Result<Vec<InventoryItem>, DbErr> {
+        InventoryEntity::find().all(&self.db).await
     }
 
     async fn get_product(&self, id: i32) -> Result<Option<ProductModel>, DbErr> {

@@ -6,10 +6,11 @@ use sea_orm::{
 
 use super::repository::ReportRepository;
 use crate::models::category::{self, Column as CategoryColumn, Entity as CategoryEntity};
+use crate::models::inventory::Model as InventoryItem;
 use crate::models::client::{self, Column as ClientColumn, Entity as ClientEntity, Model as Client};
 use crate::models::employee::Column as EmployeeColumn;
 use crate::models::product::{
-    self, Column as ProductColumn, Entity as ProductEntity, Model as InventoryProduct,
+    self, Column as ProductColumn, Entity as ProductEntity,
 };
 use crate::models::report::{CategorySales, SaleLine, SupplierProductCount, TopClient};
 use crate::models::sale::{self, Column as SaleColumn, Entity as SaleEntity};
@@ -104,11 +105,24 @@ impl ReportRepository for ReportRepositoryImpl {
             .await
     }
 
-    async fn unsold_products(&self) -> Result<Vec<InventoryProduct>, DbErr> {
+    async fn unsold_products(&self) -> Result<Vec<InventoryItem>, DbErr> {
         ProductEntity::find()
+            .select_only()
+            .column(ProductColumn::IdProduct)
+            .column_as(ProductColumn::Name, "product_name")
+            .column(ProductColumn::UnitPrice)
+            .column(ProductColumn::Stock)
+            .column(ProductColumn::IdCategory)
+            .column_as(CategoryColumn::Name, "category_name")
+            .column(ProductColumn::IdSupplier)
+            .column_as(SupplierColumn::Name, "supplier_name")
+            .join(JoinType::InnerJoin, product::Relation::Category.def())
+            .join(JoinType::InnerJoin, product::Relation::Supplier.def())
             .join(JoinType::LeftJoin, product::Relation::SaleDetails.def())
             .filter(DetailColumn::IdSaleDetail.is_null())
+            .distinct()
             .order_by_asc(ProductColumn::IdProduct)
+            .into_model::<InventoryItem>()
             .all(&self.db)
             .await
     }

@@ -1,4 +1,5 @@
 pub mod category;
+pub mod inventory;
 pub mod client;
 pub mod employee;
 pub mod product;
