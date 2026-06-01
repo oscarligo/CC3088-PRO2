@@ -98,7 +98,7 @@ function App() {
         <section className="authCard">
           <div className="authHero">
             <p className="eyebrow">Sistema de tienda</p>
-            <h1>Inicia sesión con el usuario de PostgreSQL</h1>
+            <h1 className="title_login">Inicia sesión con el usuario de PostgreSQL</h1>
             <p className="muted">
               Los accesos salen de los usuarios definidos en <code>init.sql</code>. El backend valida las credenciales y activa las vistas según tu rol.
             </p>
@@ -136,7 +136,7 @@ function App() {
               </p>
             ) : null}
 
-            <button className="button primary authButton" type="submit" disabled={loggingIn}>
+            <button className="login-button" type="submit" disabled={loggingIn}>
               {loggingIn ? 'Ingresando...' : 'Entrar'}
             </button>
           </form>

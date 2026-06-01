@@ -26,10 +26,21 @@
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 28px;
-  background: linear-gradient(180deg, rgb(32, 28, 41), rgba(251, 250, 254, 0.95));
+  background: linear-gradient(180deg, rgb(52, 41, 78), rgba(251, 250, 254, 0.95));
   box-shadow: var(--shadow);
   display: grid;
   gap: 24px;
+}
+
+.login-button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #4e2d4f;
+  color: var(--text-h);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font: inherit;
 }
 
 .authHero {
@@ -45,6 +56,14 @@
 .authButton {
   justify-self: start;
   min-width: 160px;
+}
+
+.title_login {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+  font-size: 24px;
+  margin: 0;
 }
 
 .eyebrow {
