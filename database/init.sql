@@ -273,20 +273,23 @@ AS $$
 DECLARE
     v_stock_actual INT;
 BEGIN
-    -- 1. Iniciar Bloque de manejo de excepciones (Actúa como punto de salvaguarda)
-    SELECT stock INTO v_stock_actual FROM products WHERE id_product = p_id_product;
+    -- 1. Validación de stock preventivo sobre la tabla 'product'
+    SELECT stock INTO v_stock_actual FROM product WHERE id_product = p_id_product;
     
+    IF v_stock_actual IS NULL THEN
+        RAISE EXCEPTION 'El producto con ID % no existe.', p_id_product;
+    END IF;
+
     IF v_stock_actual < p_amount THEN
-        -- Provocamos un fallo intencional para ir al bloque de excepción
         RAISE EXCEPTION 'Stock insuficiente. Disponible: %, Solicitado: %', v_stock_actual, p_amount;
     END IF;
 
-    -- 2. Operación 1: Insertar Cabecera de Venta
-    INSERT INTO sales (sale_date, id_client, id_employee, total)
+    -- 2. Operación 1: Insertar Cabecera de Venta en la tabla 'sale'
+    INSERT INTO sale (sale_date, id_client, id_employee, total)
     VALUES (CURRENT_TIMESTAMP, p_id_client, p_id_employee, 0)
     RETURNING id_sale INTO p_id_sale_generado;
 
-    -- 3. Operación 2: Insertar Detalle (Esto dispara tu trigger de stock y total)
+    -- 3. Operación 2: Insertar Detalle en 'sale_details' (Dispara los triggers de stock y totales)
     INSERT INTO sale_details (id_sale, id_product, amount, sale_price)
     VALUES (p_id_sale_generado, p_id_product, p_amount, p_sale_price);
 
@@ -295,6 +298,7 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
+        -- Control absoluto de la transacción ante excepciones físicas o de triggers
         ROLLBACK;
         p_id_sale_generado := NULL;
         p_codigo_estado := '500';
@@ -312,13 +316,14 @@ BEGIN
     SELECT json_agg(t) INTO p_json_resultado FROM (
         SELECT p.name, SUM(sd.amount) as total_vendido
         FROM sale_details sd
-        JOIN products p ON sd.id_product = p.id_product
+        JOIN product p ON sd.id_product = p.id_product
         GROUP BY p.name
         ORDER BY total_vendido DESC
         LIMIT 5
     ) t;
 END;
 $$;
+
 
 -- ============================================================================
 -- PROCEDIMIENTO 3: Reporte analítico de ventas por categoría
@@ -329,12 +334,13 @@ BEGIN
     SELECT json_agg(t) INTO p_json_resultado FROM (
         SELECT c.name as categoria, SUM(sd.amount * sd.sale_price) as ingresos
         FROM sale_details sd
-        JOIN products p ON sd.id_product = p.id_product
-        JOIN product_categories c ON p.id_category = c.id_category
+        JOIN product p ON sd.id_product = p.id_product
+        JOIN product_category c ON p.id_category = c.id_category
         GROUP BY c.name
     ) t;
 END;
 $$;
+
 
 -- ============================================================================
 -- PROCEDIMIENTO 4: Listar clientes con al menos 2 compras (SUBQUERY)
@@ -343,15 +349,16 @@ CREATE OR REPLACE PROCEDURE sp_clientes_frecuentes(OUT p_json_resultado JSON)
 LANGUAGE plpgsql AS $$
 BEGIN
     SELECT json_agg(t) INTO p_json_resultado FROM (
-        SELECT id_client, name, email FROM clients
+        SELECT id_client, name, email FROM client
         WHERE id_client IN (
-            SELECT id_client FROM sales 
+            SELECT id_client FROM sale 
             GROUP BY id_client 
             HAVING COUNT(id_sale) >= 2
         )
     ) t;
 END;
 $$;
+
 
 -- ============================================================================
 -- PROCEDIMIENTO 5: Productos sin ventas 
@@ -360,7 +367,7 @@ CREATE OR REPLACE PROCEDURE sp_productos_sin_ventas(OUT p_json_resultado JSON)
 LANGUAGE plpgsql AS $$
 BEGIN
     SELECT json_agg(t) INTO p_json_resultado FROM (
-        SELECT p.id_product, p.name FROM products p
+        SELECT p.id_product, p.name FROM product p
         WHERE NOT EXISTS (
             SELECT 1 FROM sale_details sd WHERE sd.id_product = p.id_product
         )

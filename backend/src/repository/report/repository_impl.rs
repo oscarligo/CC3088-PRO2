@@ -1,8 +1,10 @@
 use sea_orm::{
     sea_query::{Alias, Expr, ExprTrait, Func},
     ColumnTrait, DatabaseConnection, DbErr, EntityTrait, JoinType, QueryFilter, QueryOrder,
-    QuerySelect, RelationTrait,
+    QuerySelect, RelationTrait, DbBackend, Statement, ConnectionTrait
 };
+use serde::Deserialize;
+
 
 use super::repository::ReportRepository;
 use crate::models::category::{self, Column as CategoryColumn, Entity as CategoryEntity};
@@ -79,94 +81,111 @@ impl ReportRepository for ReportRepositoryImpl {
             .await
     }
 
-    async fn category_sales(&self, min_total: f64) -> Result<Vec<CategorySales>, DbErr> {
-        let revenue_expr = Expr::col((DetailEntity, DetailColumn::Amount))
-            .mul(Expr::col((DetailEntity, DetailColumn::SalePrice)));
+    async fn category_sales(&self, _min_total: f64) -> Result<Vec<CategorySales>, DbErr> {
+        let stmt = Statement::from_string(
+            DbBackend::Postgres,
+            "CALL sp_reporte_ventas_categoria(NULL);".to_string(),
+        );
 
-        CategoryEntity::find()
-            .select_only()
-            .column(CategoryColumn::IdCategory)
-            .column_as(CategoryColumn::Name, "category_name")
-            .expr_as(Expr::col((DetailEntity, DetailColumn::Amount)).sum(), "items_sold")
-            .expr_as(
-                Expr::col((DetailEntity, DetailColumn::IdSale)).count_distinct(),
-                "sales_count",
-            )
-            .expr_as(Func::sum(revenue_expr.clone()), "total_revenue")
-            .join(JoinType::InnerJoin, category::Relation::Product.def())
-            .join(JoinType::InnerJoin, product::Relation::SaleDetails.def())
-            .join(JoinType::InnerJoin, sale_details::Relation::Sale.def())
-            .group_by(CategoryColumn::IdCategory)
-            .group_by(CategoryColumn::Name)
-            .having(Func::sum(revenue_expr).gte(min_total))
-            .order_by_desc(Expr::cust("total_revenue"))
-            .into_model::<CategorySales>()
-            .all(&self.db)
-            .await
+        match self.db.query_one(stmt).await? {
+            Some(row) => {
+                let json_string: Option<String> = row.try_get("", "p_json_resultado").unwrap_or(None);
+                if let Some(json_str) = json_string {
+                    if json_str == "[]" || json_str.trim().is_empty() {
+                        return Ok(vec![]);
+                    }
+                    let data: Vec<CategorySales> = serde_json::from_str(&json_str)
+                        .map_err(|e| DbErr::Custom(format!("Error serializando SP Ventas Categoría: {}", e)))?;
+                    Ok(data)
+                } else {
+                    Ok(vec![])
+                }
+            }
+            None => Ok(vec![]),
+        }
     }
 
+    // ============================================================================
+    // REQUISITO PROCEDURE 5 ➔ Mapeado a: unsold_products
+    // ============================================================================
     async fn unsold_products(&self) -> Result<Vec<InventoryItem>, DbErr> {
-        ProductEntity::find()
-            .select_only()
-            .column(ProductColumn::IdProduct)
-            .column_as(ProductColumn::Name, "product_name")
-            .column(ProductColumn::UnitPrice)
-            .column(ProductColumn::Stock)
-            .column(ProductColumn::IdCategory)
-            .column_as(CategoryColumn::Name, "category_name")
-            .column(ProductColumn::IdSupplier)
-            .column_as(SupplierColumn::Name, "supplier_name")
-            .join(JoinType::InnerJoin, product::Relation::Category.def())
-            .join(JoinType::InnerJoin, product::Relation::Supplier.def())
-            .join(JoinType::LeftJoin, product::Relation::SaleDetails.def())
-            .filter(DetailColumn::IdSaleDetail.is_null())
-            .distinct()
-            .order_by_asc(ProductColumn::IdProduct)
-            .into_model::<InventoryItem>()
-            .all(&self.db)
-            .await
+        let stmt = Statement::from_string(
+            DbBackend::Postgres,
+            "CALL sp_productos_sin_ventas(NULL);".to_string(),
+        );
+
+        match self.db.query_one(stmt).await? {
+            Some(row) => {
+                let json_string: Option<String> = row.try_get("", "p_json_resultado").unwrap_or(None);
+                if let Some(json_str) = json_string {
+
+                    println!("DUMP JSON DESDE POSTGRES ➔: {}", json_str);
+                    
+                    if json_str == "[]" || json_str.trim().is_empty() {
+                        return Ok(vec![]);
+                    }
+                    let data: Vec<InventoryItem> = serde_json::from_str(&json_str)
+                        .map_err(|e| DbErr::Custom(format!("Error serializando SP Productos Sin Ventas: {}", e)))?;
+                    Ok(data)
+                } else {
+                    Ok(vec![])
+                }
+            }
+            None => Ok(vec![]),
+        }
     }
 
-    async fn clients_with_min_sales(&self, min_sales: i64) -> Result<Vec<Client>, DbErr> {
-        ClientEntity::find()
-            .select_only()
-            .column(ClientColumn::IdClient)
-            .column(ClientColumn::Name)
-            .column(ClientColumn::Nit)
-            .column(ClientColumn::Email)
-            .join(JoinType::InnerJoin, client::Relation::Sale.def())
-            .group_by(ClientColumn::IdClient)
-            .group_by(ClientColumn::Name)
-            .group_by(ClientColumn::Nit)
-            .group_by(ClientColumn::Email)
-            .having(Expr::col((SaleEntity, SaleColumn::IdSale)).count().gte(min_sales))
-            .order_by_asc(ClientColumn::IdClient)
-            .into_model::<Client>()
-            .all(&self.db)
-            .await
+    // ============================================================================
+    // REQUISITO PROCEDURE 4 ➔ Mapeado a: clients_with_min_sales
+    // ============================================================================
+    async fn clients_with_min_sales(&self, _min_sales: i64) -> Result<Vec<Client>, DbErr> {
+        let stmt = Statement::from_string(
+            DbBackend::Postgres,
+            "CALL sp_clientes_frecuentes(NULL);".to_string(),
+        );
+
+        match self.db.query_one(stmt).await? {
+            Some(row) => {
+                let json_string: Option<String> = row.try_get("", "p_json_resultado").unwrap_or(None);
+                if let Some(json_str) = json_string {
+                    if json_str == "[]" || json_str.trim().is_empty() {
+                        return Ok(vec![]);
+                    }
+                    let data: Vec<Client> = serde_json::from_str(&json_str)
+                        .map_err(|e| DbErr::Custom(format!("Error serializando SP Clientes Frecuentes: {}", e)))?;
+                    Ok(data)
+                } else {
+                    Ok(vec![])
+                }
+            }
+            None => Ok(vec![]),
+        }
     }
 
-    async fn top_clients(&self, limit: i64) -> Result<Vec<TopClient>, DbErr> {
-        let revenue_expr = Expr::col((DetailEntity, DetailColumn::Amount))
-            .mul(Expr::col((DetailEntity, DetailColumn::SalePrice)));
+    // ============================================================================
+    // REQUISITO PROCEDURE 2 ➔ Mapeado a: top_clients
+    // ============================================================================
+    async fn top_clients(&self, _limit: i64) -> Result<Vec<TopClient>, DbErr> {
+        let stmt = Statement::from_string(
+            DbBackend::Postgres,
+            "CALL sp_reporte_top_productos(NULL);".to_string(),
+        );
 
-        ClientEntity::find()
-            .select_only()
-            .column(ClientColumn::IdClient)
-            .column_as(ClientColumn::Name, "client_name")
-            .expr_as(Func::sum(revenue_expr), "total_spent")
-            .expr_as(
-                Expr::col((DetailEntity, DetailColumn::IdSale)).count_distinct(),
-                "sales_count",
-            )
-            .join(JoinType::InnerJoin, client::Relation::Sale.def())
-            .join(JoinType::InnerJoin, sale::Relation::SaleDetails.def())
-            .group_by(ClientColumn::IdClient)
-            .group_by(ClientColumn::Name)
-            .order_by_desc(Expr::cust("total_spent"))
-            .limit(limit as u64)
-            .into_model::<TopClient>()
-            .all(&self.db)
-            .await
+        match self.db.query_one(stmt).await? {
+            Some(row) => {
+                let json_string: Option<String> = row.try_get("", "p_json_resultado").unwrap_or(None);
+                if let Some(json_str) = json_string {
+                    if json_str == "[]" || json_str.trim().is_empty() {
+                        return Ok(vec![]);
+                    }
+                    let data: Vec<TopClient> = serde_json::from_str(&json_str)
+                        .map_err(|e| DbErr::Custom(format!("Error serializando SP Top Productos: {}", e)))?;
+                    Ok(data)
+                } else {
+                    Ok(vec![])
+                }
+            }
+            None => Ok(vec![]),
+        }
     }
 }
