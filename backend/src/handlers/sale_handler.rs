@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse, Responder};
+use sea_orm::sqlx::types::Decimal;
 use serde::{Deserialize, Serialize};
 
 use crate::models::sale_details::Model as SaleDetailModel;
@@ -9,7 +10,7 @@ use crate::AppState;
 pub struct CreateSaleDetailRequest {
     pub id_product: i32,
     pub amount: i32,
-    pub price_at_sale: f64,
+    pub price_at_sale: Decimal,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,7 +47,7 @@ pub async fn create_sale_handler(
         if detail.amount <= 0 {
             return HttpResponse::BadRequest().json("amount debe ser > 0");
         }
-        if detail.price_at_sale < 0.0 {
+        if detail.price_at_sale < Decimal::ZERO {
             return HttpResponse::BadRequest().json("price_at_sale debe ser >= 0");
         }
     }

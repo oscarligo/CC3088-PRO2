@@ -29,7 +29,7 @@ impl SaleRepository for SaleRepositoryImpl {
         let txn = self.db.begin().await?;
 
         let sale_active = sale::ActiveModel {
-            id_sale: Set(0),
+            id_sale: ActiveValue::NotSet,
             id_client: Set(id_client),
             id_employee: Set(id_employee),
             sale_date: ActiveValue::NotSet,
@@ -41,7 +41,7 @@ impl SaleRepository for SaleRepositoryImpl {
         let mut saved_details = Vec::new();
         for detail in details {
             let mut detail_active = detail.into_active_model();
-            detail_active.id_sale_detail = Set(0);
+            detail_active.id_sale_detail = ActiveValue::NotSet;
             detail_active.id_sale = Set(generated_sale_id); // Inyectamos el ID padre
 
             let saved_detail = detail_active.insert(&txn).await?;

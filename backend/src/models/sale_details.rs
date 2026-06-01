@@ -10,7 +10,7 @@ pub struct Model {
     pub id_sale: i32,    
     pub id_product: i32, 
     pub amount: i32,
-    pub sale_price: f64, 
+    pub sale_price: Decimal, 
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

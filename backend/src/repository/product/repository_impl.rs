@@ -1,4 +1,4 @@
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, IntoActiveModel, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, IntoActiveModel, Set, ActiveValue};
 use super::repository::ProductRepository;
 use crate::models::inventory::{Entity as InventoryEntity, Model as InventoryItem};
 use crate::models::product::{Entity as ProductEntity, Model as ProductModel};
@@ -17,7 +17,7 @@ impl ProductRepository for ProductRepositoryImpl {
     
     async fn create_product(&self, product_data: ProductModel) -> Result<ProductModel, DbErr> {
         let mut active_model = product_data.into_active_model();        
-        active_model.id_product = Set(0); 
+        active_model.id_product = ActiveValue::NotSet;
         active_model.insert(&self.db).await
     }
 

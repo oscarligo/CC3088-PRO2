@@ -1,4 +1,4 @@
-use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, DeleteResult};
+use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, IntoActiveModel, Set, ActiveValue, DeleteResult};
 use sea_orm::DbErr;
 use super::repository::SupplierRepository;
 use crate::models::supplier::{Entity as SupplierEntity, Model as SupplierModel};
@@ -17,7 +17,7 @@ impl SupplierRepository for SupplierRepositoryImpl {
     
     async fn create_supplier(&self, supplier_data: SupplierModel) -> Result<SupplierModel, DbErr> {
         let mut active_model = supplier_data.into_active_model();
-        active_model.id_supplier = Set(0); 
+        active_model.id_supplier = ActiveValue::NotSet;
         active_model.insert(&self.db).await
     }
 

@@ -256,7 +256,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
   return (
     <section className="section">
       <header className="sectionHeader">
-        <h2>Reportes SQL (JOIN / SUBQUERY / GROUP BY / HAVING / CTE)</h2>
+        <h2>Reportes SQL</h2>
         <p className="muted">
           Estas consultas se ejecutan desde la aplicación web (backend) y sus resultados se muestran aquí.
         </p>
@@ -276,7 +276,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
 
       <div className="reportGrid">
         <div className="reportCard">
-          <h3 className="cardTitle">JOIN (multi-tabla): Detalle de ventas</h3>
+          <h3 className="cardTitle">Detalle de ventas</h3>
           <p className="muted">
             API: <code>{urls.saleLines}</code>
           </p>
@@ -317,7 +317,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
 
         <div className="reportCard">
-          <h3 className="cardTitle">JOIN + GROUP BY + HAVING: Productos por proveedor</h3>
+          <h3 className="cardTitle">Productos por proveedor</h3>
           <p className="muted">
             API: <code>{urls.supplierProductCount}</code>
           </p>
@@ -350,7 +350,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
 
         <div className="reportCard">
-          <h3 className="cardTitle">JOIN + GROUP BY + HAVING: Ventas por categoría</h3>
+          <h3 className="cardTitle">Ventas por categoría</h3>
           <p className="muted">
             API: <code>{urls.categorySales}</code>
           </p>
@@ -383,7 +383,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
 
         <div className="reportCard">
-          <h3 className="cardTitle">SUBQUERY (NOT EXISTS): Productos sin ventas</h3>
+          <h3 className="cardTitle">Productos sin ventas</h3>
           <p className="muted">
             API: <code>{urls.unsoldProducts}</code>
           </p>
@@ -418,7 +418,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
 
         <div className="reportCard">
-          <h3 className="cardTitle">SUBQUERY (IN): Clientes con al menos 2 ventas</h3>
+          <h3 className="cardTitle">Clientes con al menos 2 ventas</h3>
           <p className="muted">
             API: <code>{urls.clientsMinSales}</code>
           </p>
@@ -451,7 +451,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         </div>
 
         <div className="reportCard">
-          <h3 className="cardTitle">CTE (WITH): Top clientes por gasto</h3>
+          <h3 className="cardTitle">Top clientes por gasto</h3>
           <p className="muted">
             API: <code>{urls.topClients}</code>
           </p>
@@ -485,10 +485,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
       </div>
 
       <div className="reportCard full">
-        <h3 className="cardTitle">Transacción explícita (BEGIN/ROLLBACK): Registrar venta</h3>
-        <p className="muted">
-          Si envías una cantidad mayor al stock, el backend hace <code>ROLLBACK</code> y verás el error.
-        </p>
+        <h3 className="cardTitle">Registrar venta</h3>
         <p className="muted">
           API: <code>{urls.sales}</code>
         </p>
