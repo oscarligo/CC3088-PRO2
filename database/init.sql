@@ -172,3 +172,83 @@ SELECT
 FROM product p
 INNER JOIN product_category c ON p.id_category = c.id_category
 INNER JOIN supplier s ON p.id_supplier = s.id_supplier;
+
+
+-- ============================================================================
+-- 1. LIMPIEZA DE SEGURIDAD GENERAL
+-- ============================================================================
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
+
+GRANT CONNECT ON DATABASE tienda_db TO PUBLIC;
+
+-- ============================================================================
+-- 2. CREACIÓN DE LOS 5 ROLES 
+-- ============================================================================
+DROP ROLE IF EXISTS role_admin;
+DROP ROLE IF EXISTS role_cajero;
+DROP ROLE IF EXISTS role_inventario;
+DROP ROLE IF EXISTS role_analista;
+DROP ROLE IF EXISTS role_soporte_auditor;
+
+CREATE ROLE role_admin NOLOGIN;
+CREATE ROLE role_cajero NOLOGIN;
+CREATE ROLE role_inventario NOLOGIN;
+CREATE ROLE role_analista NOLOGIN;
+CREATE ROLE role_auditor NOLOGIN;
+
+GRANT USAGE ON SCHEMA public TO role_admin, role_cajero, role_inventario, role_analista, role_auditor;
+
+
+-- ============================================================================
+-- 3. ASIGNACIÓN DE PERMISOS A LOS ROLES 
+-- ============================================================================
+
+-- --- A. ROLE_ADMIN (Control Total) ---
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO role_admin;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO role_admin;
+
+-- --- B. ROLE_CAJERO (Operaciones de Venta) ---
+-- Puede registrar ventas ver el historial 
+GRANT INSERT, SELECT ON sales, sale_details TO role_cajero;
+GRANT USAGE, SELECT ON SEQUENCE sales_id_sale_seq, sale_details_id_sale_detail_seq TO role_cajero;
+GRANT SELECT ON products, clients, employees TO role_cajero;
+
+-- --- C. ROLE_INVENTARIO (Administración de Stock) ---
+GRANT SELECT, INSERT, UPDATE, DELETE ON products, product_categories, suppliers TO role_inventario;
+GRANT USAGE, SELECT ON SEQUENCE products_id_product_seq, product_categories_id_category_seq, suppliers_id_supplier_seq TO role_inventario;
+GRANT SELECT ON vw_inventory TO role_inventario;
+
+-- --- D. ROLE_ANALISTA (Reportes) ---
+-- Lectura estricta sobre el rendimiento comercial y catálogos de soporte
+GRANT SELECT ON sales, sale_details, products, product_categories, suppliers, vw_inventory TO role_analista;
+
+-- --- E. ROLE_AUDITOR (Cumplimiento Legal) ---
+-- Solo lectura de la información de personas (Clientes y Empleados) para auditoría de datos o NITs
+GRANT SELECT ON clients, employees TO role_auditor;
+
+
+-- ============================================================================
+-- 4. CREACIÓN DE 5 USUARIOS DE PRUEBA (Cuentas con Acceso - LOGIN)
+-- ============================================================================
+DROP USER IF EXISTS user_master_admin;
+DROP USER IF EXISTS user_cajero;
+DROP USER IF EXISTS user_inventario;
+DROP USER IF EXISTS user_analista;
+DROP USER IF EXISTS user_auditor;
+
+CREATE USER user_master_admin WITH PASSWORD 'AdminSecure2026!';
+CREATE USER user_cajero  WITH PASSWORD 'CajaCenPass99*';
+CREATE USER user_inventario WITH PASSWORD 'StockManager44_';
+CREATE USER user_analista     WITH PASSWORD 'DataDriven2026';
+CREATE USER user_auditor WITH PASSWORD 'AuditAccessCheck#';
+
+
+-- ============================================================================
+-- 5. ASIGNACIÓN DE ROLES A USUARIOS (GRANT ROLE TO USER)
+-- ============================================================================
+GRANT role_admin            TO user_master_admin;
+GRANT role_cajero           TO user_cajero;
+GRANT role_inventario       TO user_inventario;
+GRANT role_analista         TO user_analista;
+GRANT role_auditor          TO user_auditor. VALID UNTIL '2025-12-31'; 

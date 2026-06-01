@@ -30,7 +30,27 @@ docker compose up --build
 3) Abrir en el navegador:
 
 - Frontend: http://localhost:5173 (por defecto)
-- Backend API: http://localhost:8080 (por defecto)
+- Backend API: http://localhost:8081 (por defecto)
+
+
+## Estructura del proyecto: 
+```
+src/
+├─ handlers/       			 // Controladores
+│  ├─ mod.rs
+│  └─ *_handler.rs  (product, sale, report, etc.)
+├─ models/          		 // ENTIDADES Y DTOs con SeaORM
+│  ├─ mod.rs
+│  └─ *.rs          (product, report, sale, etc.)
+├─ repository/      		 // Interacción con la DB
+│  ├─ [entidad]/    		 // Subcarpetas por entidad
+│  │  ├─ mod.rs
+│  │  ├─ repository.rs       // Trait/Interface: Define QUÉ hace
+│  │  └─ repository_impl.rs  // Implementación: Define CÓMO lo hace con el ORM
+│  └─ mod.rs
+└─ main.rs          		 // Configuración, base de datos y Server HTTP
+
+```
 
 
 ## Requisitos del proyecto (dónde se ve en la UI)
