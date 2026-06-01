@@ -1,12 +1,17 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use crate::auth::{extract_session, AppRole};
 use crate::AppState;
 use crate::repository::product::ProductRepository;
 use crate::models::product::Model as ProductModel;
 
 // 1. GET /api/products/inventory
 pub async fn get_inventory_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario, AppRole::Analista]) {
+        return resp;
+    }
 
     match state.product_repo.list_inventory().await {
         Ok(inventory) => HttpResponse::Ok().json(inventory),
@@ -19,8 +24,13 @@ pub async fn get_inventory_handler(
 
 // 2. GET /api/products
 pub async fn list_products_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario, AppRole::Analista]) {
+        return resp;
+    }
+
     match state.product_repo.list_products().await {
         Ok(products) => HttpResponse::Ok().json(products),
         Err(err) => {
@@ -32,10 +42,15 @@ pub async fn list_products_handler(
 
 // 3. GET /api/products/{id}
 pub async fn get_product_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     id: web::Path<i32>,
 ) -> impl Responder {
     let product_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario, AppRole::Analista]) {
+        return resp;
+    }
 
     match state.product_repo.get_product(product_id).await {
         Ok(Some(product)) => HttpResponse::Ok().json(product),
@@ -49,9 +64,14 @@ pub async fn get_product_handler(
 
 // 4. POST /api/products
 pub async fn create_product_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     payload: web::Json<ProductModel>, 
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
+
     let product_data = payload.into_inner();
 
     if product_data.name.trim().is_empty() {
@@ -76,11 +96,16 @@ pub async fn create_product_handler(
 
 //  5. PUT /api/products/{id}
 pub async fn update_product_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     id: web::Path<i32>,
     payload: web::Json<ProductModel>,
 ) -> impl Responder {
     let product_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
     let product_data = payload.into_inner();
 
     if product_data.name.trim().is_empty() {
@@ -105,10 +130,15 @@ pub async fn update_product_handler(
 
 // 6. DELETE /api/products/{id}
 pub async fn delete_product_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     id: web::Path<i32>,
 ) -> impl Responder {
     let product_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
 
     match state.product_repo.delete_product(product_id).await {
         Ok(_) => HttpResponse::NoContent().finish(),

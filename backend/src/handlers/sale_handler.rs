@@ -1,7 +1,8 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use sea_orm::sqlx::types::Decimal;
 use serde::{Deserialize, Serialize};
 
+use crate::auth::{extract_session, AppRole};
 use crate::models::sale_details::Model as SaleDetailModel;
 use crate::repository::sale::SaleRepository;
 use crate::AppState;
@@ -27,9 +28,14 @@ pub struct CreateSaleResponse {
 }
 
 pub async fn create_sale_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     payload: web::Json<CreateSaleRequest>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Cajero]) {
+        return resp;
+    }
+
     let payload = payload.into_inner();
 
     if payload.id_employee <= 0 {

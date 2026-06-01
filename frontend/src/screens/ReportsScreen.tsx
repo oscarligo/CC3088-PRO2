@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { apiJson } from '../api'
+import type { AppRole } from '../auth'
 
 type SaleLine = {
   id_sale: number
@@ -75,9 +76,10 @@ type CreateSaleResponse = {
 
 type Props = {
   apiBaseUrl: string
+  role: AppRole
 }
 
-export function ReportsScreen({ apiBaseUrl }: Props) {
+export function ReportsScreen({ apiBaseUrl, role }: Props) {
   const urls = useMemo(
     () => ({
       saleLines: `${apiBaseUrl}/api/reports/sale-lines`,
@@ -93,6 +95,8 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
     }),
     [apiBaseUrl],
   )
+
+  const canCreateSales = role === 'admin' || role === 'cajero'
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -145,9 +149,9 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
       apiJson<InventoryProduct[]>(urls.unsoldProducts, { signal }),
       apiJson<Client[]>(urls.clientsMinSales, { signal }),
       apiJson<TopClient[]>(urls.topClients, { signal }),
-      apiJson<Client[]>(urls.clients, { signal }),
-      apiJson<Employee[]>(urls.employees, { signal }),
-      apiJson<Product[]>(urls.products, { signal }),
+      canCreateSales ? apiJson<Client[]>(urls.clients, { signal }) : Promise.resolve([] as Client[]),
+      canCreateSales ? apiJson<Employee[]>(urls.employees, { signal }) : Promise.resolve([] as Employee[]),
+      canCreateSales ? apiJson<Product[]>(urls.products, { signal }) : Promise.resolve([] as Product[]),
     ])
 
     setSaleLines(saleLinesData)
@@ -157,15 +161,21 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
     setClientsMinSales(clientsMinSalesData)
     setTopClients(topClientsData)
 
-    setClients(clientsData)
-    setEmployees(employeesData)
-    setProducts(productsData)
+    if (canCreateSales) {
+      setClients(clientsData)
+      setEmployees(employeesData)
+      setProducts(productsData)
 
-    setDefaultsForSaleForm({
-      clients: clientsData,
-      employees: employeesData,
-      products: productsData,
-    })
+      setDefaultsForSaleForm({
+        clients: clientsData,
+        employees: employeesData,
+        products: productsData,
+      })
+    } else {
+      setClients([])
+      setEmployees([])
+      setProducts([])
+    }
   }
 
   useEffect(() => {
@@ -189,7 +199,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
 
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urls])
+  }, [urls, canCreateSales])
 
   const reload = async () => {
     setError(null)
@@ -206,6 +216,7 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
 
   const submitSale = async (e: FormEvent) => {
     e.preventDefault()
+    if (!canCreateSales) return
     setSaleError(null)
     setSaleSuccess(null)
 
@@ -490,84 +501,91 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
           API: <code>{urls.sales}</code>
         </p>
 
-        {saleSuccess ? <p className="status">{saleSuccess}</p> : null}
-        {saleError ? (
-          <p className="status error" role="alert">
-            {saleError}
-          </p>
-        ) : null}
+        {canCreateSales ? (
+          <>
+            {saleSuccess ? <p className="status">{saleSuccess}</p> : null}
+            {saleError ? (
+              <p className="status error" role="alert">
+                {saleError}
+              </p>
+            ) : null}
 
-        <form className="form" onSubmit={submitSale}>
-          <div className="formRow">
-            <label className="field">
-              <span className="label">Cliente</span>
-              <select
-                className="select"
-                value={idClient}
-                onChange={(e) => setIdClient(e.target.value)}
-                disabled={saleSaving || clients.length === 0}
-              >
-                {clients.map((c) => (
-                  <option key={c.id_client} value={c.id_client}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <form className="form" onSubmit={submitSale}>
+              <div className="formRow">
+                <label className="field">
+                  <span className="label">Cliente</span>
+                  <select
+                    className="select"
+                    value={idClient}
+                    onChange={(e) => setIdClient(e.target.value)}
+                    disabled={saleSaving || clients.length === 0}
+                  >
+                    <option value="">Sin cliente</option>
+                    {clients.map((c) => (
+                      <option key={c.id_client} value={c.id_client}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="field">
-              <span className="label">Empleado</span>
-              <select
-                className="select"
-                value={idEmployee}
-                onChange={(e) => setIdEmployee(e.target.value)}
-                disabled={saleSaving || employees.length === 0}
-              >
-                {employees.map((emp) => (
-                  <option key={emp.id_employee} value={emp.id_employee}>
-                    {emp.name} — {emp.role}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="field">
+                  <span className="label">Empleado</span>
+                  <select
+                    className="select"
+                    value={idEmployee}
+                    onChange={(e) => setIdEmployee(e.target.value)}
+                    disabled={saleSaving || employees.length === 0}
+                  >
+                    {employees.map((emp) => (
+                      <option key={emp.id_employee} value={emp.id_employee}>
+                        {emp.name} — {emp.role}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="field">
-              <span className="label">Producto</span>
-              <select
-                className="select"
-                value={idProduct}
-                onChange={(e) => setIdProduct(e.target.value)}
-                disabled={saleSaving || products.length === 0}
-              >
-                {products.map((p) => (
-                  <option key={p.id_product} value={p.id_product}>
-                    {p.name} (stock: {p.stock})
-                  </option>
-                ))}
-              </select>
-            </label>
+                <label className="field">
+                  <span className="label">Producto</span>
+                  <select
+                    className="select"
+                    value={idProduct}
+                    onChange={(e) => setIdProduct(e.target.value)}
+                    disabled={saleSaving || products.length === 0}
+                  >
+                    {products.map((p) => (
+                      <option key={p.id_product} value={p.id_product}>
+                        {p.name} (stock: {p.stock})
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label className="field">
-              <span className="label">Cantidad</span>
-              <input
-                className="input"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                inputMode="numeric"
-                disabled={saleSaving}
-              />
-            </label>
+                <label className="field">
+                  <span className="label">Cantidad</span>
+                  <input
+                    className="input"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    inputMode="numeric"
+                    disabled={saleSaving}
+                  />
+                </label>
 
-            <div className="field actions">
-              <span className="label">Acción</span>
-              <div className="buttonRow">
-                <button className="button primary" type="submit" disabled={saleSaving}>
-                  Registrar
-                </button>
+                <div className="field actions">
+                  <span className="label">Acción</span>
+                  <div className="buttonRow">
+                    <button className="button primary" type="submit" disabled={saleSaving}>
+                      Registrar
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </form>
+            </form>
+          </>
+        ) : (
+          <p className="status">Tu rol no permite crear ventas desde esta pantalla.</p>
+        )}
       </div>
     </section>
   )

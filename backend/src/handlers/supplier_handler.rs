@@ -1,10 +1,15 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 
+use crate::auth::{extract_session, AppRole};
 use crate::models::supplier::Model as SupplierModel;
 use crate::repository::supplier::SupplierRepository;
 use crate::AppState;
 
-pub async fn list_suppliers_handler(state: web::Data<AppState>) -> impl Responder {
+pub async fn list_suppliers_handler(req: HttpRequest, state: web::Data<AppState>) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario, AppRole::Analista]) {
+        return resp;
+    }
+
     match state.supplier_repo.list_suppliers().await {
         Ok(suppliers) => HttpResponse::Ok().json(suppliers),
         Err(err) => {
@@ -14,8 +19,12 @@ pub async fn list_suppliers_handler(state: web::Data<AppState>) -> impl Responde
     }
 }
 
-pub async fn get_supplier_handler(state: web::Data<AppState>, id: web::Path<i32>) -> impl Responder {
+pub async fn get_supplier_handler(req: HttpRequest, state: web::Data<AppState>, id: web::Path<i32>) -> impl Responder {
     let supplier_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario, AppRole::Analista]) {
+        return resp;
+    }
 
     match state.supplier_repo.get_supplier(supplier_id).await {
         Ok(Some(supplier)) => HttpResponse::Ok().json(supplier),
@@ -32,9 +41,14 @@ pub async fn get_supplier_handler(state: web::Data<AppState>, id: web::Path<i32>
 }
 
 pub async fn create_supplier_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     payload: web::Json<SupplierModel>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
+
     let supplier_data = payload.into_inner();
 
     if supplier_data.name.trim().is_empty() {
@@ -51,11 +65,16 @@ pub async fn create_supplier_handler(
 }
 
 pub async fn update_supplier_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     id: web::Path<i32>,
     payload: web::Json<SupplierModel>,
 ) -> impl Responder {
     let supplier_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
     let supplier_data = payload.into_inner();
 
     if supplier_data.name.trim().is_empty() {
@@ -83,10 +102,15 @@ pub async fn update_supplier_handler(
 }
 
 pub async fn delete_supplier_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     id: web::Path<i32>,
 ) -> impl Responder {
     let supplier_id = id.into_inner();
+
+    if let Err(resp) = extract_session(&req, &[AppRole::Inventario]) {
+        return resp;
+    }
 
     match state.supplier_repo.delete_supplier(supplier_id).await {
         Ok(_) => HttpResponse::NoContent().finish(),

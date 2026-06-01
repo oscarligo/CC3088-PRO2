@@ -1,10 +1,15 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
+use crate::auth::{extract_session, AppRole};
 use crate::AppState;
 use crate::repository::report::ReportRepository;
 
 // 1. GET /api/reports/sale-lines
-pub async fn sale_lines_handler(state: web::Data<AppState>) -> impl Responder {
+pub async fn sale_lines_handler(req: HttpRequest, state: web::Data<AppState>) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     match state.report_repo.list_sale_lines().await {
         Ok(rows) => HttpResponse::Ok().json(rows),
         Err(err) => {
@@ -21,9 +26,14 @@ pub struct SupplierProductCountQuery {
 }
 
 pub async fn supplier_product_count_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     query: web::Query<SupplierProductCountQuery>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     let min_products = query.min_products.unwrap_or(1);
     if min_products < 0 {
         return HttpResponse::BadRequest().json("min_products debe ser >= 0");
@@ -45,9 +55,14 @@ pub struct CategorySalesQuery {
 }
 
 pub async fn category_sales_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     query: web::Query<CategorySalesQuery>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     let min_total = query.min_total.unwrap_or(0.0);
     if min_total < 0.0 {
         return HttpResponse::BadRequest().json("min_total debe ser >= 0");
@@ -63,7 +78,11 @@ pub async fn category_sales_handler(
 }
 
 // 4. GET /api/reports/unsold-products
-pub async fn unsold_products_handler(state: web::Data<AppState>) -> impl Responder {
+pub async fn unsold_products_handler(req: HttpRequest, state: web::Data<AppState>) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     match state.report_repo.unsold_products().await {
         Ok(rows) => HttpResponse::Ok().json(rows),
         Err(err) => {
@@ -80,9 +99,14 @@ pub struct ClientsWithMinSalesQuery {
 }
 
 pub async fn clients_with_min_sales_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     query: web::Query<ClientsWithMinSalesQuery>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     let min_sales = query.min_sales.unwrap_or(1);
     if min_sales <= 0 {
         return HttpResponse::BadRequest().json("min_sales debe ser > 0");
@@ -104,9 +128,14 @@ pub struct TopClientsQuery {
 }
 
 pub async fn top_clients_handler(
+    req: HttpRequest,
     state: web::Data<AppState>,
     query: web::Query<TopClientsQuery>,
 ) -> impl Responder {
+    if let Err(resp) = extract_session(&req, &[AppRole::Analista]) {
+        return resp;
+    }
+
     let limit = query.limit.unwrap_or(10);
     if !(1..=100).contains(&limit) {
         return HttpResponse::BadRequest().json("limit debe estar entre 1 y 100");

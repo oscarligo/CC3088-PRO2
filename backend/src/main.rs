@@ -20,6 +20,7 @@ use crate::repository::supplier::SupplierRepositoryImpl;
 pub mod models;  
 pub mod handlers; 
 pub mod repository;
+pub mod auth;
 
 pub struct AppState {
     pub category_repo: Arc<CategoryRepositoryImpl>,
@@ -64,20 +65,26 @@ async fn main() -> std::io::Result<()> {
         sale_detail_repo: Arc::new(SaleDetailRepositoryImpl { db: db.clone() }),
         supplier_repo: Arc::new(SupplierRepositoryImpl { db: db.clone() }),
     });
+    let database_url_data = web::Data::new(database_url.clone());
 
     // Actix-web server
     HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
             .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-            .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE])
+            .allowed_headers(vec![header::ACCEPT, header::CONTENT_TYPE, header::AUTHORIZATION])
             .max_age(3600);
 
         App::new()
             .wrap(cors)
             .app_data(shared_state.clone())
+            .app_data(database_url_data.clone())
             .service(
                 web::scope("/api")
+                    .service(
+                        web::scope("/auth")
+                            .route("/login", web::post().to(handlers::auth_handler::login_handler))
+                    )
                     .service(
                         web::scope("/products")
                             .route("/inventory", web::get().to(handlers::product_handler::get_inventory_handler))

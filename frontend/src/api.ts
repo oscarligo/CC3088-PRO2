@@ -12,14 +12,27 @@ export class ApiError extends Error {
   }
 }
 
+function getStoredToken(): string | undefined {
+  try {
+    const raw = localStorage.getItem('cc3088_session')
+    if (!raw) return undefined
+    const parsed = JSON.parse(raw) as { token?: string }
+    return parsed.token
+  } catch {
+    return undefined
+  }
+}
+
 export async function apiJson<T>(
   url: string,
   init?: RequestInit,
 ): Promise<T> {
+  const token = getStoredToken()
   const res = await fetch(url, {
     ...init,
     headers: {
       Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   })
@@ -45,10 +58,12 @@ export async function apiJson<T>(
 }
 
 export async function apiNoContent(url: string, init?: RequestInit): Promise<void> {
+  const token = getStoredToken()
   const res = await fetch(url, {
     ...init,
     headers: {
       Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   })

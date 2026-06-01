@@ -209,23 +209,23 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO role_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO role_admin;
 
 -- --- B. ROLE_CAJERO (Operaciones de Venta) ---
--- Puede registrar ventas ver el historial 
-GRANT INSERT, SELECT ON sales, sale_details TO role_cajero;
-GRANT USAGE, SELECT ON SEQUENCE sales_id_sale_seq, sale_details_id_sale_detail_seq TO role_cajero;
-GRANT SELECT ON products, clients, employees TO role_cajero;
+-- Puede registrar ventas y ver el historial
+GRANT INSERT, SELECT ON sale, sale_details TO role_cajero;
+GRANT USAGE, SELECT ON SEQUENCE sale_id_sale_seq, sale_details_id_sale_detail_seq TO role_cajero;
+GRANT SELECT ON product, client, employee TO role_cajero;
 
 -- --- C. ROLE_INVENTARIO (Administración de Stock) ---
-GRANT SELECT, INSERT, UPDATE, DELETE ON products, product_categories, suppliers TO role_inventario;
-GRANT USAGE, SELECT ON SEQUENCE products_id_product_seq, product_categories_id_category_seq, suppliers_id_supplier_seq TO role_inventario;
+GRANT SELECT, INSERT, UPDATE, DELETE ON product, product_category, supplier TO role_inventario;
+GRANT USAGE, SELECT ON SEQUENCE product_id_product_seq, product_category_id_category_seq, supplier_id_supplier_seq TO role_inventario;
 GRANT SELECT ON vw_inventory TO role_inventario;
 
 -- --- D. ROLE_ANALISTA (Reportes) ---
 -- Lectura estricta sobre el rendimiento comercial y catálogos de soporte
-GRANT SELECT ON sales, sale_details, products, product_categories, suppliers, vw_inventory TO role_analista;
+GRANT SELECT ON sale, sale_details, product, product_category, supplier, vw_inventory TO role_analista;
 
 -- --- E. ROLE_AUDITOR (Cumplimiento Legal) ---
 -- Solo lectura de la información de personas (Clientes y Empleados) para auditoría de datos o NITs
-GRANT SELECT ON clients, employees TO role_auditor;
+GRANT SELECT ON client, employee TO role_auditor;
 
 
 -- ============================================================================
@@ -237,11 +237,11 @@ DROP USER IF EXISTS user_inventario;
 DROP USER IF EXISTS user_analista;
 DROP USER IF EXISTS user_auditor;
 
-CREATE USER user_master_admin WITH PASSWORD 'AdminSecure2026!';
-CREATE USER user_cajero  WITH PASSWORD 'CajaCenPass99*';
-CREATE USER user_inventario WITH PASSWORD 'StockManager44_';
-CREATE USER user_analista     WITH PASSWORD 'DataDriven2026';
-CREATE USER user_auditor WITH PASSWORD 'AuditAccessCheck#';
+CREATE USER user_master_admin WITH PASSWORD '123456';
+CREATE USER user_cajero  WITH PASSWORD '123456';
+CREATE USER user_inventario WITH PASSWORD '123456';
+CREATE USER user_analista     WITH PASSWORD '123456';
+CREATE USER user_auditor WITH PASSWORD '123456';
 
 
 -- ============================================================================
@@ -251,4 +251,4 @@ GRANT role_admin            TO user_master_admin;
 GRANT role_cajero           TO user_cajero;
 GRANT role_inventario       TO user_inventario;
 GRANT role_analista         TO user_analista;
-GRANT role_auditor          TO user_auditor. VALID UNTIL '2025-12-31'; 
+GRANT role_auditor          TO user_auditor;
