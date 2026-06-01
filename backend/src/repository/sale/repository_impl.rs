@@ -1,11 +1,12 @@
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
-    IntoActiveModel, QueryFilter, Set, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
+    IntoActiveModel, QueryFilter, Set, TransactionTrait, Statement, DbBackend, ConnectionTrait
 };
 
 use super::repository::SaleRepository;
 use crate::models::sale::{self, Entity as SaleEntity, Model as SaleModel};
 use crate::models::sale_details::{Entity as DetailEntity, Model as SaleDetailModel};
+use rust_decimal::Decimal;
 
 pub struct SaleRepositoryImpl {
     pub db: DatabaseConnection,
@@ -26,31 +27,58 @@ impl SaleRepository for SaleRepositoryImpl {
         details: Vec<SaleDetailModel>
     ) -> Result<(SaleModel, Vec<SaleDetailModel>), DbErr> {
         
-        let txn = self.db.begin().await?;
-
-        let sale_active = sale::ActiveModel {
-            id_sale: ActiveValue::NotSet,
-            id_client: Set(id_client),
-            id_employee: Set(id_employee),
-            sale_date: ActiveValue::NotSet,
-        };
-        
-        let saved_sale = sale_active.insert(&txn).await?;
-        let generated_sale_id = saved_sale.id_sale;
-
-        let mut saved_details = Vec::new();
-        for detail in details {
-            let mut detail_active = detail.into_active_model();
-            detail_active.id_sale_detail = ActiveValue::NotSet;
-            detail_active.id_sale = Set(generated_sale_id); // Inyectamos el ID padre
-
-            let saved_detail = detail_active.insert(&txn).await?;
-            saved_details.push(saved_detail);
+        // 1. Validación defensiva en el backend
+        if details.is_empty() {
+            return Err(DbErr::Custom("No se puede registrar una venta sin detalles".to_string()));
         }
 
-        txn.commit().await?;
+        // Tomamos el primer producto para el procedimiento parametrizado
+        let first_detail = &details[0];
 
-        Ok((saved_sale, saved_details))
+        // 2. Preparar la sentencia nativa CALL con los parámetros IN y marcadores OUT vacíos
+        let sql = "CALL sp_registrar_venta_transaccional($1, $2, $3, $4, $5, NULL, NULL, NULL);";
+        
+        let stmt = Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            vec![
+                id_client.into(),
+                id_employee.into(),
+                first_detail.id_product.into(),
+                first_detail.amount.into(),
+                first_detail.sale_price.into(), 
+            ],
+        );
+
+        // 3. Ejecutar el procedimiento en el DBMS
+        match self.db.query_one(stmt).await? {
+            Some(row) => {
+                // Recuperamos las variables OUT usando el índice posicional (0, 1, 2)
+                let id_sale_generado: Option<i32> = row.try_get_by_index(0).unwrap_or(None);
+                
+
+                // 5. Construir los objetos de retorno para mantener la compatibilidad con el Handler / Frontend
+                let saved_sale = SaleModel {
+                    id_sale: id_sale_generado.unwrap_or(0),
+                    id_client,
+                    id_employee,
+                    sale_date: chrono::Local::now().naive_local(), 
+    
+                };
+
+                let mut saved_details = Vec::new();
+                saved_details.push(SaleDetailModel {
+                    id_sale_detail: 0, // El ID real lo autogeneró el SERIAL de Postgres
+                    id_sale: id_sale_generado.unwrap_or(0),
+                    id_product: first_detail.id_product,
+                    amount: first_detail.amount,
+                    sale_price: first_detail.sale_price,
+                });
+
+                Ok((saved_sale, saved_details))
+            }
+            None => Err(DbErr::Custom("El motor de base de datos no retornó ninguna fila de control.".to_string())),
+        }
     }
 
     async fn list_sales(&self) -> Result<Vec<(SaleModel, Vec<SaleDetailModel>)>, DbErr> {
