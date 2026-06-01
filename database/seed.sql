@@ -268,7 +268,7 @@ INSERT INTO client (name, nit, email) VALUES
 ('Alicia Escobar', '3939393-9', 'aescobar@email.com');
 
 -- 6. INSERTAR 50 VENTAS (Fechas distribuidas para reportes)
-INSERT INTO sale (date, id_client, id_employee) VALUES
+INSERT INTO sale (sale_date, id_client, id_employee) VALUES
 ('2026-01-15 10:30:00', 1, 2),
 ('2026-01-18 14:45:00', 3, 6),
 ('2026-02-05 11:15:00', 5, 10),

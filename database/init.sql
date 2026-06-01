@@ -66,7 +66,7 @@ CREATE TABLE client (
 -- ==========================================
 CREATE TABLE sale (
     id_sale SERIAL PRIMARY KEY,
-    date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sale_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_client INT,
     id_employee INT NOT NULL,
     total DECIMAL(12,2) DEFAULT 0 CHECK (total >= 0),
@@ -95,7 +95,7 @@ CREATE TABLE sale_details (
 -- INDEXES
 -- ==========================================
 CREATE INDEX idx_client_nit ON client(nit);
-CREATE INDEX idx_sale_date ON sale(date);
+CREATE INDEX idx_sale_date ON sale(sale_date);
 CREATE INDEX idx_sale_details_sale ON sale_details(id_sale);
 CREATE INDEX idx_product_category ON product(id_category);
 CREATE INDEX idx_product_supplier ON product(id_supplier);

@@ -35,7 +35,7 @@ impl ReportRepository for ReportRepositoryImpl {
             .select_only()
             .column(SaleColumn::IdSale)
             .expr_as(
-                Expr::col((SaleEntity, SaleColumn::Date)).cast_as(Alias::new("text")),
+                Expr::col((SaleEntity, SaleColumn::SaleDate)).cast_as(Alias::new("text")),
                 "sale_date",
             )
             .column_as(ClientColumn::Name, "client_name")

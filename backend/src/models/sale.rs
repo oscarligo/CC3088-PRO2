@@ -10,7 +10,7 @@ pub struct Model {
     pub id_client: Option<i32>, 
     pub id_employee: i32,   
     #[sea_orm(default_value = "expr:NOW()")] 
-    pub date: DateTime,
+    pub sale_date: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

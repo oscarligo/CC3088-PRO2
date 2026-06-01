@@ -29,11 +29,11 @@ type CategorySales = {
 
 type InventoryProduct = {
   id_product: number
-  product_name: string
+  name: string
   unit_price: number | string
   stock: number
-  category_name: number | string
-  supplier_name: number | string
+  id_category: number
+  id_supplier: number
 }
 
 type Client = {
@@ -66,7 +66,9 @@ type Product = {
 }
 
 type CreateSaleResponse = {
-  id_sale: number
+  sale: {
+    id_sale: number
+  }
 }
 
 type Props = {
@@ -236,11 +238,11 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
         body: JSON.stringify({
           id_client: idClientPayload,
           id_employee: idEmployeeNumber,
-          items: [{ id_product: idProductNumber, amount: amountNumber }],
+          details: [{ id_product: idProductNumber, amount: amountNumber, price_at_sale: Number(products.find((p) => p.id_product === idProductNumber)?.unit_price ?? 0) }],
         }),
       })
 
-      setSaleSuccess(`Venta creada con id_sale=${res.id_sale}`)
+      setSaleSuccess(`Venta creada con id_sale=${res.sale.id_sale}`)
       await reload()
     } catch (e) {
       setSaleError(e instanceof Error ? e.message : 'Error desconocido')
@@ -401,10 +403,10 @@ export function ReportsScreen({ apiBaseUrl }: Props) {
                   {unsoldProducts.map((p) => (
                     <tr key={p.id_product}>
                       <td className="mono">{p.id_product}</td>
-                      <td>{p.product_name}</td>
+                      <td>{p.name}</td>
                       <td className="mono">{p.stock}</td>
-                      <td>{p.category_name}</td>
-                      <td>{p.supplier_name}</td>
+                      <td className="mono">{p.id_category}</td>
+                      <td className="mono">{p.id_supplier}</td>
                     </tr>
                   ))}
                 </tbody>

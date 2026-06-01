@@ -32,7 +32,7 @@ impl SaleRepository for SaleRepositoryImpl {
             id_sale: Set(0),
             id_client: Set(id_client),
             id_employee: Set(id_employee),
-            date: ActiveValue::NotSet,
+            sale_date: ActiveValue::NotSet,
         };
         
         let saved_sale = sale_active.insert(&txn).await?;
