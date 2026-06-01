@@ -252,3 +252,118 @@ GRANT role_cajero           TO user_cajero;
 GRANT role_inventario       TO user_inventario;
 GRANT role_analista         TO user_analista;
 GRANT role_auditor          TO user_auditor;
+
+
+
+-- ============================================================================
+-- PROCEDIMIENTO 1: Registrar una Venta Completa de forma Transaccional
+-- ============================================================================
+CREATE OR REPLACE PROCEDURE sp_registrar_venta_transaccional(
+    IN p_id_client INT,
+    IN p_id_employee INT,
+    IN p_id_product INT,
+    IN p_amount INT,
+    IN p_sale_price DECIMAL(10,2),
+    OUT p_id_sale_generado INT,
+    OUT p_codigo_estado VARCHAR(10),
+    OUT p_mensaje_estado TEXT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_stock_actual INT;
+BEGIN
+    -- 1. Iniciar Bloque de manejo de excepciones (Actúa como punto de salvaguarda)
+    SELECT stock INTO v_stock_actual FROM products WHERE id_product = p_id_product;
+    
+    IF v_stock_actual < p_amount THEN
+        -- Provocamos un fallo intencional para ir al bloque de excepción
+        RAISE EXCEPTION 'Stock insuficiente. Disponible: %, Solicitado: %', v_stock_actual, p_amount;
+    END IF;
+
+    -- 2. Operación 1: Insertar Cabecera de Venta
+    INSERT INTO sales (sale_date, id_client, id_employee, total)
+    VALUES (CURRENT_TIMESTAMP, p_id_client, p_id_employee, 0)
+    RETURNING id_sale INTO p_id_sale_generado;
+
+    -- 3. Operación 2: Insertar Detalle (Esto dispara tu trigger de stock y total)
+    INSERT INTO sale_details (id_sale, id_product, amount, sale_price)
+    VALUES (p_id_sale_generado, p_id_product, p_amount, p_sale_price);
+
+    p_codigo_estado := '201';
+    p_mensaje_estado := 'Venta registrada con éxito de forma atómica.';
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_id_sale_generado := NULL;
+        p_codigo_estado := '500';
+        p_mensaje_estado := 'ROLLBACK ejecutado. Motivo del fallo: ' || SQLERRM;
+END;
+$$;
+
+
+-- ============================================================================
+-- PROCEDIMIENTO 2: Reporte analítico de productos más vendidos
+-- ============================================================================
+CREATE OR REPLACE PROCEDURE sp_reporte_top_productos(OUT p_json_resultado JSON)
+LANGUAGE plpgsql AS $$
+BEGIN
+    SELECT json_agg(t) INTO p_json_resultado FROM (
+        SELECT p.name, SUM(sd.amount) as total_vendido
+        FROM sale_details sd
+        JOIN products p ON sd.id_product = p.id_product
+        GROUP BY p.name
+        ORDER BY total_vendido DESC
+        LIMIT 5
+    ) t;
+END;
+$$;
+
+-- ============================================================================
+-- PROCEDIMIENTO 3: Reporte analítico de ventas por categoría
+-- ============================================================================
+CREATE OR REPLACE PROCEDURE sp_reporte_ventas_categoria(OUT p_json_resultado JSON)
+LANGUAGE plpgsql AS $$
+BEGIN
+    SELECT json_agg(t) INTO p_json_resultado FROM (
+        SELECT c.name as categoria, SUM(sd.amount * sd.sale_price) as ingresos
+        FROM sale_details sd
+        JOIN products p ON sd.id_product = p.id_product
+        JOIN product_categories c ON p.id_category = c.id_category
+        GROUP BY c.name
+    ) t;
+END;
+$$;
+
+-- ============================================================================
+-- PROCEDIMIENTO 4: Listar clientes con al menos 2 compras (SUBQUERY)
+-- ============================================================================
+CREATE OR REPLACE PROCEDURE sp_clientes_frecuentes(OUT p_json_resultado JSON)
+LANGUAGE plpgsql AS $$
+BEGIN
+    SELECT json_agg(t) INTO p_json_resultado FROM (
+        SELECT id_client, name, email FROM clients
+        WHERE id_client IN (
+            SELECT id_client FROM sales 
+            GROUP BY id_client 
+            HAVING COUNT(id_sale) >= 2
+        )
+    ) t;
+END;
+$$;
+
+-- ============================================================================
+-- PROCEDIMIENTO 5: Productos sin ventas 
+-- ============================================================================
+CREATE OR REPLACE PROCEDURE sp_productos_sin_ventas(OUT p_json_resultado JSON)
+LANGUAGE plpgsql AS $$
+BEGIN
+    SELECT json_agg(t) INTO p_json_resultado FROM (
+        SELECT p.id_product, p.name FROM products p
+        WHERE NOT EXISTS (
+            SELECT 1 FROM sale_details sd WHERE sd.id_product = p.id_product
+        )
+    ) t;
+END;
+$$;
